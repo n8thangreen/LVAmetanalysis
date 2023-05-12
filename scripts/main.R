@@ -12,21 +12,24 @@ dat <- haven::read_dta("data/LVA and outcomes.dta")
 
 fdat <- data.frame(z = c(0,0,1,1,NA,NA),
                    x = c(0,1,0,1,0,1),
-                   n = c(12,3,5,18,10,20))
+                   n = c(12,3,5,18,10,20),
+                   study = 1)
 
 offset <- c(0, cumsum(fdat$n)) + 1
 
 x <- z <- NULL
+study <- NULL
 
 for (j in 1:nrow(fdat)) {
   for (i in offset[j]:(offset[j+1]-1)) {
     x[i] <- fdat$x[j]
     z[i] <- fdat$z[j]
+    study[i] <- fdat$study[j]
   }  
 }
 
 filein <- "BUGS/bugs_script.txt"
-params <- c("phi", "psi")
+params <- c("phi", "psi", "psi0", "beta0", "alpha")
 
 n.iter <- 20000
 n.burnin <- 1000
@@ -35,6 +38,8 @@ n.thin <- floor((n.iter - n.burnin)/500)
 dataJags <-
   list(x = x,
        z = z,
+       study = study,
+       ns = length(unique(study)),
        n = length(x))
 
 res_bugs <-

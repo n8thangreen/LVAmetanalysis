@@ -2,16 +2,28 @@
 # imperfect test and gold-standard
 
 model {
-
   for (i in 1:n) {
-    z[i] ~ dbern(psi)
+    z[i] ~ dbern(psi[study[i]])  # gold-standard
     x[i] ~ dbern(phi[z1[i]])
     z1[i] <- z[i] + 1
-  }  
+  }
 
   for (j in 1:2) {
     phi[j] ~ dunif(0, 1)
   }
   
-  psi ~ dunif(0, 1)
+  # study-level random effects
+  for (s in 1:ns) {
+    logit(psi[s]) <- alpha + beta[s]
+    beta[s] ~ dnorm(beta0, tau)
+  }
+  
+  tau <- 1/sigma2
+  sigma2 <- pow(sd, 2)
+  sd ~ dunif(0, 100)
+  
+  alpha ~ dnorm(0, 0.0001)
+  beta0 ~ dnorm(0, 0.0001)
+  
+  logit(psi0) <- beta0
 }
