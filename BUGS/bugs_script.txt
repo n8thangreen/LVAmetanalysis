@@ -1,0 +1,17 @@
+# prevalence model
+# imperfect test and gold-standard
+
+model {
+
+  for (i in 1:n) {
+    z[i] ~ dbern(psi)
+    x[i] ~ dbern(phi[z1[i]])
+    z1[i] <- z[i] + 1
+  }  
+
+  for (j in 1:2) {
+    phi[j] ~ dunif(0, 1)
+  }
+  
+  psi ~ dunif(0, 1)
+}
