@@ -88,11 +88,62 @@ res_bugs <-
        n.thin,
        DIC = TRUE)
 
-# print(res_bugs)
-# mcmcplot(res_bugs)
-# plots <- traceplot(res_bugs)
+# two-step approach
+jags_mod <- jags.model(
+  file = filein,
+  data = dataJags,
+  inits = NULL,
+  n.chains = 1)
+
+res_jags <- 
+  rjags::coda.samples(jags_mod,
+                      variable.names = params,
+                      n.iter = n.iter,
+                      thin = n.thin)
 
 R2WinBUGS::attach.bugs(res_bugs$BUGSoutput)
 
 output <- res_bugs$BUGSoutput
-output
+print(output, digits.summary = 4)
+
+
+#########
+# plots #
+#########
+
+library(tidybayes)
+library(ggplot2)
+
+study_lup <- 
+  dat_agg |> 
+  select(study, study_id) |> 
+  distinct()
+
+dat_psi <- spread_draws(res_jags, psi[i]) |> 
+  left_join(study_lup, by = join_by(i == study_id)) |> 
+  ungroup() |> 
+  select(-i)
+
+dat_psi0 <- spread_draws(res_jags, psi0) |> 
+  mutate(study = "Average") |> 
+  rename(psi = psi0)
+
+plot_dat <- rbind(dat_psi, dat_psi0)
+
+dat_sum <- plot_dat |> 
+  group_by(study) %>% 
+  mean_qi(psi)
+
+plot_dat %>%   
+  ggplot(aes(x = psi, y = study)) +
+  geom_vline(xintercept = mean(res_jags[[1]][,"psi0"]), linewidth = .25, lty = 2) +
+  ggdist::stat_halfeye(.width = c(0.8, 0.95), fill = "dodgerblue") +
+  xlab("Prevalence") +
+  xlim(0,0.2) +
+  scale_x_continuous(labels = scales::percent)
+  # # Add text labels
+  # geom_text(
+  # data = mutate_if(out_all_sum, is.numeric, round, 2),
+  # aes(label = str_glue("{b_Intercept} [{.lower}, {.upper}]"), x = 0.2),
+  # hjust = "inward") 
+  
