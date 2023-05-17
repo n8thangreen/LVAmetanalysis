@@ -106,6 +106,8 @@ R2WinBUGS::attach.bugs(res_bugs$BUGSoutput)
 output <- res_bugs$BUGSoutput
 print(output, digits.summary = 4)
 
+save(res_jags, file = "data/res_jags_main.RData")
+
 
 #########
 # plots #
@@ -136,10 +138,10 @@ dat_sum <- plot_dat |>
 
 plot_dat %>%   
   ggplot(aes(x = psi, y = study)) +
-  geom_vline(xintercept = mean(res_jags[[1]][,"psi0"]), linewidth = .25, lty = 2) +
+  geom_vline(xintercept = mean(res_jags[[1]][,"psi0"]), linewidth = 0.25, lty = 2) +
   ggdist::stat_halfeye(.width = c(0.8, 0.95), fill = "dodgerblue") +
   xlab("Prevalence") +
-  xlim(0,0.2) +
+  xlim(0, 0.2) +
   scale_x_continuous(labels = scales::percent)
   # # Add text labels
   # geom_text(
@@ -147,3 +149,4 @@ plot_dat %>%
   # aes(label = str_glue("{b_Intercept} [{.lower}, {.upper}]"), x = 0.2),
   # hjust = "inward") 
   
+write.csv(plot_dat, file = "data/plot_dat_main.csv")
