@@ -1,4 +1,4 @@
-# meta-analyses of LV apical aneurysms in HCM
+# Meta-analyses of LV apical aneurysms in HCM
 
 LVA is “A discrete, thin walled dyskinetic or akinetic segment of the most
 distal portion of the LV”
