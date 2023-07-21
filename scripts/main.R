@@ -1,5 +1,5 @@
 
-# prevalence analysis
+# prevalence analysis for LVA data
 # imperfect test and gold-standard
 # with BUGS
 
@@ -9,6 +9,7 @@ library(dplyr)
 
 dat_raw <- haven::read_dta("data/LVA and outcomes.dta")
 
+# marginal data
 dat <-
   dat_raw |> 
   select(study, imaging, cohort, aneurysm) |> 
@@ -16,9 +17,12 @@ dat <-
          n = aneurysm) |> 
   mutate(
     # study = as.numeric(as.factor(study)),
-    imaging = ifelse(imaging == "CMR+TTE",
+    imaging = ifelse(imaging == "CMR+TTE",  # CMR as gold-standard
                      "CMR", imaging))
 
+# cross test, joint data
+# z: CMR
+# x: TTE
 maron2008 <- 
   tibble::tribble(
     ~study, ~n,	~z,	~x,
@@ -27,6 +31,7 @@ maron2008 <-
     "Maron 2008", 10,	1,	1,
     "Maron 2008", 6,	NA,	1)
 
+# all data in joint format
 dat_agg <- 
   rbind(
     dat |> 
@@ -48,6 +53,7 @@ x <- z <- NULL
 study_id <- NULL
 
 # create equivalent individual data
+# from count data
 for (j in 1:nrow(dat_agg)) {
   for (i in offset[j]:(offset[j+1]-1)) {
     x[i] <- dat_agg$x[j]
@@ -56,9 +62,8 @@ for (j in 1:nrow(dat_agg)) {
   }  
 }
 
-prev <- 0.2
-
 # priors
+prev <- 0.2
 beta_pars_sens <- MoM_beta(0.8, 0.1)
 beta_pars_1m_spec <- MoM_beta(1 - 0.8, 0.1)
 mu_beta <- car::logit(prev)
@@ -77,6 +82,7 @@ n.iter <- 20000
 n.burnin <- 1000
 n.thin <- floor((n.iter - n.burnin)/500)
 
+# fit model
 res_bugs <-
   jags(data = dataJags,
        inits = NULL,

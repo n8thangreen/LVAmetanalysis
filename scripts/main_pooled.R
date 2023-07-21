@@ -1,6 +1,6 @@
 
 # meta-analysis
-# of LVT data
+# of LVA data
 
 
 library(meta)
@@ -8,6 +8,7 @@ library(dplyr)
 
 dat_raw <- foreign::read.dta("data/LVA and outcomes.dta")
 
+##############
 # frequentist
 
 res <- metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
@@ -18,18 +19,17 @@ forest(res, xlim = c(0, 0.1))
 forest(res_imaging, xlim = c(0, 0.1))
 forest(res_small, xlim = c(0, 0.1))
 
-require(lme4)
-
-modf <- glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study), family="binomial", data = dat_raw)
+# fit model directly
+modf <- lme4::glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study), family="binomial", data = dat_raw)
 summary(modf)
 ranef(modf)
 fixef(modf)
 exp(fixef(modf))
 
+###########
 # Bayesian
 
 library(rstanarm)
-library(ggplot2)
 library(brms)
 
 modb <- stan_glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study),
@@ -39,6 +39,7 @@ modb <- stan_glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study),
 # average
 exp(modb$coefficients[1])
 
+# same model in brms
 mod_brm <- brm(aneurysm | trials(cohort) ~ 1 + (1|study),
                data = dat_raw,
                family = binomial())
@@ -50,6 +51,7 @@ s#########
 #########
 
 # https://mvuorre.github.io/posts/2016-09-29-bayesian-meta-analysis/
+library(ggplot2)
 library(tidybayes)
 library(ggdist)
 library(forcats)
