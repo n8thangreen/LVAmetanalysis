@@ -13,7 +13,7 @@ model {
   phi[2] ~ dbeta(0.48, 0.12)  # sensitivity
   
   # study-level random effects
-  # prevalence (prob positive for gold standard
+  # prevalence (prob positive for gold standard)
   for (s in 1:ns) {
     logit(psi[s]) <- beta[s]
     beta[s] ~ dnorm(beta0, tau)

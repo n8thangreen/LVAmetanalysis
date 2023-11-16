@@ -1,5 +1,5 @@
 
-#
+# methods of moments
 MoM_beta <- function(xbar,
                      vbar) {
   if (vbar == 0) {
