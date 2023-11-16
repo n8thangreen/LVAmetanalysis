@@ -38,7 +38,7 @@ dataJags <-
        n = length(x))               # number of patients
 
 # from generative distribution
-prev <- 0.7
+prev <- 0.3
 indiv_dat <- 
   data.frame(study = rep(1:10, each = 10)) |> 
   group_by(study) |> 
@@ -92,4 +92,6 @@ res_bugs <-
 R2WinBUGS::attach.bugs(res_bugs$BUGSoutput)
 
 output <- res_bugs$BUGSoutput
-output
+
+print(output, digits.summary = 4)
+
