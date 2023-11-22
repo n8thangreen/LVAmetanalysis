@@ -1,5 +1,6 @@
 
-# forest plots
+# forest plots combining two test uncerainty and basic model
+#
 # https://mjskay.github.io/ggdist/articles/slabinterval.html
 
 
@@ -22,6 +23,9 @@ plot_dat_main <-
 plot_dat <- 
   rbind(plot_dat_main, plot_dat_pooled)
 
+#######
+# plot
+
 plot_dat %>%   
   ggplot(aes(x = psi, y = study,  group = model, fill = model)) +
   # geom_vline(xintercept = mean(res_jags[[1]][,"psi0"]), linewidth = 0.25, lty = 2) +
@@ -36,5 +40,6 @@ plot_dat %>%
 # aes(label = str_glue("{b_Intercept} [{.lower}, {.upper}]"), x = 0.2),
 # hjust = "inward") 
 
-ggsave(filename = "plots/forest_plot.png", width = 20, height = 20, units = "cm", dpi = 640, device = "png")
+ggsave(filename = "plots/forest_plot_combined.png",
+       width = 20, height = 20, units = "cm", dpi = 640, device = "png")
 

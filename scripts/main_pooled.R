@@ -5,21 +5,74 @@
 
 library(meta)
 library(dplyr)
+library(lme4)
 
-dat_raw <- foreign::read.dta("data/LVA and outcomes.dta")
+filename <- "LVA and outcomes_2023 11 13.dta"
+# filename <- "LVA and outcomes.dta"
+
+dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
+# write.csv(dat_raw, file = "data/LVA-and-outcomes.csv")
 
 ##############
 # frequentist
 
-res <- metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
-res_imaging <- metaprop(event = aneurysm, n = cohort, studlab = study, byvar = imaging, data = dat_raw)
-res_small <- metaprop(event = n_small, n = cohort, studlab = study, data = dat_raw)
+res <-
+  metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
+res_scd <-
+  metaprop(event = nscd, n = cohort, studlab = study, data = dat_raw)
+res_imaging <-
+  metaprop(event = aneurysm, n = cohort, studlab = study, byvar = imaging, data = dat_raw)
+res_small <-
+  metaprop(event = n_small, n = cohort, studlab = study, data = dat_raw)
+res_medium <-
+  metaprop(event = n_medium, n = cohort, studlab = study, data = dat_raw)
+res_large <-
+  metaprop(event = n_large, n = cohort, studlab = study, data = dat_raw)
 
+dat_size <- dat_raw |> 
+  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"), variable.name = "size")
+
+res_size <-
+  metaprop(event = value, n = cohort, studlab = study, byvar = size, data = dat_size)
+
+resbind_size <-
+  metabind(res_small, res_medium, res_large,
+           outclab = "", pooled = "common", backtransf = FALSE)
+##TODO: error
+# forest(resbind_size, print.I2 = FALSE, print.pval.Q = FALSE, print.subgroup.labels = FALSE)
+
+png("plots/res_aneurysm.png", height = 500, width = 550)
 forest(res, xlim = c(0, 0.1))
-forest(res_imaging, xlim = c(0, 0.1))
-forest(res_small, xlim = c(0, 0.1))
+dev.off()
 
-# fit model directly
+png("plots/res_scd.png", height = 500, width = 550)
+forest(res_scd, xlim = c(0, 0.04))
+dev.off()
+
+png("plots/res_imaging.png", height = 800, width = 850)
+forest(res_imaging, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_small.png", height = 500, width = 550)
+forest(res_small, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_medium.png", height = 500, width = 550)
+forest(res_medium, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_large.png", height = 500, width = 550)
+forest(res_large, xlim = c(0, 0.1))
+dev.off()
+
+# don't this that this plot is strictly correct because overall pooling is double counting
+# so should remove this
+png("plots/res_size.png", height = 800, width = 650)
+forest(res_size, xlim = c(-0.005, 0.1))
+dev.off()
+
+
+## fit model directly
 modf <- lme4::glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study), family="binomial", data = dat_raw)
 summary(modf)
 ranef(modf)
@@ -46,7 +99,7 @@ mod_brm <- brm(aneurysm | trials(cohort) ~ 1 + (1|study),
 
 save(mod_brm, file = "data/mod_brm_pooled.RData")
 
-s#########
+#########
 # plots #
 #########
 
