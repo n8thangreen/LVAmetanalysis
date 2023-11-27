@@ -1,6 +1,8 @@
 
-# frequentist meta-analysis
-# of LVA data
+# frequentist and Bayesian meta-analysis
+# of aneurysm (LVA) data
+# for outcomes:
+#  stroke, LV thrombus, SCD, imaging, size
 
 
 library(meta)
@@ -20,20 +22,28 @@ dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
 
 res <-
   metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
+
 res_stroke <-
   metaprop(event = ncva, n = aneurysm, studlab = study, data = dat_raw)
+
 res_lvthrombus <-
   metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = dat_raw)
+
 res_svt_aneu <-
   metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = dat_raw)
+
 res_scd <-
   metaprop(event = nscd, n = cohort, studlab = study, data = dat_raw)
+
 res_imaging <-
   metaprop(event = aneurysm, n = cohort, studlab = study, byvar = imaging, data = dat_raw)
+
 res_small <-
   metaprop(event = n_small, n = cohort, studlab = study, data = dat_raw)
+
 res_medium <-
   metaprop(event = n_medium, n = cohort, studlab = study, data = dat_raw)
+
 res_large <-
   metaprop(event = n_large, n = cohort, studlab = study, data = dat_raw)
 
@@ -48,6 +58,11 @@ resbind_size <-
            outclab = "", pooled = "common", backtransf = FALSE)
 ##TODO: error
 # forest(resbind_size, print.I2 = FALSE, print.pval.Q = FALSE, print.subgroup.labels = FALSE)
+
+
+#########
+# plots #
+#########
 
 png("plots/res_aneurysm.png", height = 500, width = 550)
 forest(res) #, xlim = c(0, 0.1))
