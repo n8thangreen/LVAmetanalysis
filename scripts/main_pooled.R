@@ -1,5 +1,5 @@
 
-# meta-analysis
+# frequentist meta-analysis
 # of LVA data
 
 
@@ -13,11 +13,19 @@ filename <- "LVA and outcomes_2023 11 13.dta"
 dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
 # write.csv(dat_raw, file = "data/LVA-and-outcomes.csv")
 
+dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
+
 ##############
 # frequentist
 
 res <-
   metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
+res_stroke <-
+  metaprop(event = ncva, n = aneurysm, studlab = study, data = dat_raw)
+res_lvthrombus <-
+  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = dat_raw)
+res_svt_aneu <-
+  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = dat_raw)
 res_scd <-
   metaprop(event = nscd, n = cohort, studlab = study, data = dat_raw)
 res_imaging <-
@@ -30,8 +38,8 @@ res_large <-
   metaprop(event = n_large, n = cohort, studlab = study, data = dat_raw)
 
 dat_size <- dat_raw |> 
-  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"), variable.name = "size")
-
+  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"),
+                             variable.name = "size")
 res_size <-
   metaprop(event = value, n = cohort, studlab = study, byvar = size, data = dat_size)
 
@@ -42,42 +50,57 @@ resbind_size <-
 # forest(resbind_size, print.I2 = FALSE, print.pval.Q = FALSE, print.subgroup.labels = FALSE)
 
 png("plots/res_aneurysm.png", height = 500, width = 550)
-forest(res, xlim = c(0, 0.1))
+forest(res) #, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_stroke.png", height = 500, width = 550)
+forest(res_stroke) #, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_lvthrombus.png", height = 500, width = 550)
+forest(res_lvthrombus) #, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_svt_aneu.png", height = 500, width = 550)
+forest(res_svt_aneu) #, xlim = c(0, 0.1))
 dev.off()
 
 png("plots/res_scd.png", height = 500, width = 550)
-forest(res_scd, xlim = c(0, 0.04))
+forest(res_scd) #, xlim = c(0, 0.04))
 dev.off()
 
 png("plots/res_imaging.png", height = 800, width = 850)
-forest(res_imaging, xlim = c(0, 0.1))
+forest(res_imaging) #, xlim = c(0, 0.1))
 dev.off()
 
 png("plots/res_small.png", height = 500, width = 550)
-forest(res_small, xlim = c(0, 0.1))
+forest(res_small) #, xlim = c(0, 0.1))
 dev.off()
 
 png("plots/res_medium.png", height = 500, width = 550)
-forest(res_medium, xlim = c(0, 0.1))
+forest(res_medium) #, xlim = c(0, 0.1))
 dev.off()
 
 png("plots/res_large.png", height = 500, width = 550)
-forest(res_large, xlim = c(0, 0.1))
+forest(res_large) #, xlim = c(0, 0.1))
 dev.off()
 
 # don't this that this plot is strictly correct because overall pooling is double counting
 # so should remove this
 png("plots/res_size.png", height = 800, width = 650)
-forest(res_size, xlim = c(-0.005, 0.1))
+forest(res_size) #, xlim = c(-0.005, 0.1))
 dev.off()
 
 
-## fit model directly
+#####################
+# fit model directly
+
 modf <- lme4::glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study), family="binomial", data = dat_raw)
 summary(modf)
 ranef(modf)
 fixef(modf)
 exp(fixef(modf))
+
 
 ###########
 # Bayesian
