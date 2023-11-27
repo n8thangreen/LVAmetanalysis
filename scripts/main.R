@@ -148,11 +148,11 @@ plot_dat %>%
   ggdist::stat_halfeye(.width = c(0.8, 0.95), fill = "dodgerblue") +
   xlab("Prevalence") +
   xlim(0, 0.2) +
-  scale_x_continuous(labels = scales::percent)
+  scale_x_continuous(labels = scales::percent) +
   # # Add text labels
-  # geom_text(
-  # data = mutate_if(out_all_sum, is.numeric, round, 2),
-  # aes(label = str_glue("{b_Intercept} [{.lower}, {.upper}]"), x = 0.2),
-  # hjust = "inward") 
-  
+  geom_text(
+  data = mutate_if(out_all_sum, is.numeric, round, 2),
+  aes(label = str_glue("{b_Intercept} [{.lower}, {.upper}]"), x = 0.2),
+  hjust = "inward")
+
 write.csv(plot_dat, file = "data/plot_dat_main.csv")
