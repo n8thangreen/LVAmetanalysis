@@ -9,7 +9,7 @@ library(meta)
 library(dplyr)
 library(lme4)
 
-filename <- "LVA and outcomes_2023 11 13.dta"
+filename <- "LVA and outcomes_2023 11 30.dta"
 # filename <- "LVA and outcomes.dta"
 
 dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
@@ -20,17 +20,10 @@ dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
 ##############
 # frequentist
 
+## prevalence in total cohort
+
 res <-
   metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
-
-res_stroke <-
-  metaprop(event = ncva, n = aneurysm, studlab = study, data = dat_raw)
-
-res_lvthrombus <-
-  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = dat_raw)
-
-res_svt_aneu <-
-  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = dat_raw)
 
 res_scd <-
   metaprop(event = nscd, n = cohort, studlab = study, data = dat_raw)
@@ -58,6 +51,36 @@ resbind_size <-
            outclab = "", pooled = "common", backtransf = FALSE)
 ##TODO: error
 # forest(resbind_size, print.I2 = FALSE, print.pval.Q = FALSE, print.subgroup.labels = FALSE)
+
+## prevalence in aneurysm group
+
+res_stroke <-
+  metaprop(event = ncva, n = aneurysm, studlab = study, data = dat_raw)
+
+res_lvthrombus <-
+  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = dat_raw)
+
+res_svt_aneu <-
+  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = dat_raw)
+
+res_scd_per_aneurysm <-
+  metaprop(event = nscd, n = aneurysm, studlab = study, byvar = atpy_n, data = dat_raw)
+
+res_small_per_aneurysm <-
+  metaprop(event = n_small, n = aneurysm, studlab = study, data = dat_raw)
+
+res_medium_per_aneurysm <-
+  metaprop(event = n_medium, n = aneurysm, studlab = study, data = dat_raw)
+
+res_large_per_aneurysm <-
+  metaprop(event = n_large, n = aneurysm, studlab = study, data = dat_raw)
+
+
+# The same comment applies for sudden death; can the forest plot show n_scd/aneurysm 
+# (rather than n_scd/cohort? Could this be stratified with variable atpy_n (which I have included to the attached dataset).
+#   ATP is a surrogate for SCD which erroneously inflates SCD outcomes.
+
+
 
 
 #########
@@ -104,6 +127,22 @@ dev.off()
 # so should remove this
 png("plots/res_size.png", height = 800, width = 650)
 forest(res_size) #, xlim = c(-0.005, 0.1))
+dev.off()
+
+png("plots/res_small_per_aneurysm.png", height = 500, width = 550)
+forest(res_small_per_aneurysm) #, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_medium_per_aneurysm.png", height = 500, width = 550)
+forest(res_medium_per_aneurysm) #, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_large_per_aneurysm.png", height = 500, width = 550)
+forest(res_large_per_aneurysm) #, xlim = c(0, 0.1))
+dev.off()
+
+png("plots/res_scd_per_aneurysm.png", height = 500, width = 550)
+forest(res_scd_per_aneurysm) #, xlim = c(0, 0.04))
 dev.off()
 
 
@@ -185,5 +224,8 @@ out_all %>%
   # geom_point(
   #   data = dat %>% mutate(study = str_replace_all(study, "\\.", " ")), 
   #   aes(x=yi), position = position_nudge(y = -.2), shape = 1)
+
+ggsave(filename = "plots/forest_plot_posterior_aneurysm.png",
+       width = 20, height = 20, units = "cm", dpi = 640, device = "png")
 
 write.csv(out_all, file = "data/plot_dat_pooled.csv")
