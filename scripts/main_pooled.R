@@ -81,11 +81,41 @@ res_large_per_aneurysm <-
 #   ATP is a surrogate for SCD which erroneously inflates SCD outcomes.
 
 
+# SCD in patients with small and big LVA
 
+dat_raw$nscd_big <- dat_raw$nscd_medium + dat_raw$nscd_large
+dat_raw$n_big <- dat_raw$n_medium + dat_raw$n_large
+dat_raw$n_big <- ifelse(is.na(dat_raw$n_big), 100, dat_raw$n_big)
+
+dat_size <- dat_raw |> 
+  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_big"),
+                             variable.name = "size_label", id.vars = "study")
+dat_scdsize <- dat_raw |> 
+  reshape2:::melt.data.frame(measure.vars = c("nscd_small", "nscd_big"),
+                             variable.name = "size_label", id.vars = "study") |> 
+  mutate(size_label = gsub(replacement = "", "scd", size_label))
+
+dat_scdsize <- merge(dat_scdsize, dat_size, by = c("study", "size_label")) |> 
+  rename(nscd = value.x, n = value.y) |> 
+  filter(!is.na(nscd))
+
+res_nscd_big <-
+  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw)
+
+res_nscd_size <-
+  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize)
 
 #########
 # plots #
 #########
+
+forest_plot <- function(x, save = FALSE, ...) {
+  if (save) {
+    png(glue::glue("plots/{x}.png"), height = 500, width = 550)
+    on.exit(dev.off())
+  }  
+  forest(x, ...) #, xlim = c(0, 0.1))
+}
 
 png("plots/res_aneurysm.png", height = 500, width = 550)
 forest(res) #, xlim = c(0, 0.1))
@@ -143,6 +173,11 @@ dev.off()
 
 png("plots/res_scd_per_aneurysm.png", height = 500, width = 550)
 forest(res_scd_per_aneurysm) #, xlim = c(0, 0.04))
+dev.off()
+
+# forest(res_nscd_big)
+png("plots/res_nscd_size.png", height = 500, width = 550)
+forest(res_nscd_size)
 dev.off()
 
 
