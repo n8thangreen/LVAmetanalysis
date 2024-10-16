@@ -19,10 +19,11 @@ dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
 
 ##############
 # frequentist
+##############
 
 ## prevalence in total cohort
 
-res <-
+res_aneurysm <-
   metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
 
 res_scd <-
@@ -109,76 +110,44 @@ res_nscd_size <-
 # plots #
 #########
 
+# custom plot
 forest_plot <- function(x, save = FALSE, ...) {
+  var_name <- deparse(substitute(x)) 
+  
   if (save) {
-    png(glue::glue("plots/{x}.png"), height = 500, width = 550)
+    png(glue::glue("plots/{var_name}.png"), height = 500, width = 550)
     on.exit(dev.off())
   }  
-  forest(x, ...) #, xlim = c(0, 0.1))
+  
+  weight <- x$n / max(x$n)              # linear
+  # weight <- exp(1 + x$n / max(x$n))    # exponential 
+  # weight <- log(1 + x$n)               # logarithmic
+  
+  x$w.random <- weight
+  meta::forest(x, weight.study = "random", ...) #, xlim = c(0, 0.1))
 }
 
-png("plots/res_aneurysm.png", height = 500, width = 550)
-forest(res) #, xlim = c(0, 0.1))
-dev.off()
 
-png("plots/res_stroke.png", height = 500, width = 550)
-forest(res_stroke) #, xlim = c(0, 0.1))
-dev.off()
+forest_plot(res)
+forest_plot(res_stroke)
+forest_plot(res_lvthrombus)
+forest_plot(res_svt_aneu)
+forest_plot(res_scd)
+forest_plot(res_imaging)
+forest_plot(res_small)
+forest_plot(res_medium)
+forest_plot(res_large)
 
-png("plots/res_lvthrombus.png", height = 500, width = 550)
-forest(res_lvthrombus) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_svt_aneu.png", height = 500, width = 550)
-forest(res_svt_aneu) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_scd.png", height = 500, width = 550)
-forest(res_scd) #, xlim = c(0, 0.04))
-dev.off()
-
-png("plots/res_imaging.png", height = 800, width = 850)
-forest(res_imaging) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_small.png", height = 500, width = 550)
-forest(res_small) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_medium.png", height = 500, width = 550)
-forest(res_medium) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_large.png", height = 500, width = 550)
-forest(res_large) #, xlim = c(0, 0.1))
-dev.off()
-
-# don't this that this plot is strictly correct because overall pooling is double counting
+# don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
-png("plots/res_size.png", height = 800, width = 650)
-forest(res_size) #, xlim = c(-0.005, 0.1))
-dev.off()
+forest_plot(res_size)
 
-png("plots/res_small_per_aneurysm.png", height = 500, width = 550)
-forest(res_small_per_aneurysm) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_medium_per_aneurysm.png", height = 500, width = 550)
-forest(res_medium_per_aneurysm) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_large_per_aneurysm.png", height = 500, width = 550)
-forest(res_large_per_aneurysm) #, xlim = c(0, 0.1))
-dev.off()
-
-png("plots/res_scd_per_aneurysm.png", height = 500, width = 550)
-forest(res_scd_per_aneurysm) #, xlim = c(0, 0.04))
-dev.off()
-
+forest_plot(res_small_per_aneurysm)
+forest_plot(res_medium_per_aneurysm)
+forest_plot(res_large_per_aneurysm)
+forest_plot(res_scd_per_aneurysm)
 # forest(res_nscd_big)
-png("plots/res_nscd_size.png", height = 500, width = 550)
-forest(res_nscd_size)
-dev.off()
+forest_plot(res_nscd_size)
 
 
 #####################
@@ -193,6 +162,7 @@ exp(fixef(modf))
 
 ###########
 # Bayesian
+###########
 
 library(rstanarm)
 library(brms)
