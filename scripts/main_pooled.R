@@ -8,6 +8,7 @@
 library(meta)
 library(dplyr)
 library(lme4)
+library(tidyr)
 
 filename <- "LVA and outcomes_2023 11 30.dta"
 # filename <- "LVA and outcomes.dta"
@@ -16,6 +17,12 @@ dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
 # write.csv(dat_raw, file = "data/LVA-and-outcomes.csv")
 
 dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
+
+dat_raw <- dat_raw |> 
+  mutate(across(
+    c(aneurysm, ncva, nlvthrombus, nsvt_aneu_n, nscd,
+      n_small, n_medium, n_large, nscd_small, nscd_medium, nscd_large),
+    ~ replace_na(.x, 0)))
 
 ##############
 # frequentist
@@ -128,7 +135,7 @@ forest_plot <- function(x, save = FALSE, ...) {
 }
 
 
-forest_plot(res)
+forest_plot(res_aneurysm)
 forest_plot(res_stroke)
 forest_plot(res_lvthrombus)
 forest_plot(res_svt_aneu)
