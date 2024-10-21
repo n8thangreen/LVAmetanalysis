@@ -113,12 +113,60 @@ res_nscd_big <-
 res_nscd_size <-
   metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize)
 
+# pool odds-ratios
+
+# scd
+non_zero_studies <- !(dat_raw$nscd_small == 0 & dat_raw$nscd_big == 0)
+
+res_scd_size_or <- metabin(
+  event.e = nscd_small,      # Events in the treatment group
+  n.e = n_small,             # Total number in treatment group
+  event.c = nscd_big,        # Events in the control group
+  n.c = n_big,               # Total number in control group
+  studlab = study,           # Study labels
+  sm = "OR",                 # Summary measure: odds ratio (OR)
+  method = "MH",             # Mantel-Haenszel method for pooling
+  data = dat_raw[non_zero_studies, ]
+)
+
+##TODO: data broken down by size needed
+# cva
+non_zero_studies <- !(dat_raw$ncva_small == 0 & dat_raw$ncva_big == 0)
+
+res_cva_size_or <- metabin(
+  event.e = ncva_small,
+  n.e = n_small,       
+  event.c = ncva_big,  
+  n.c = n_big,         
+  studlab = study,     
+  sm = "OR",           
+  method = "MH",
+  data = dat_raw[non_zero_studies, ]
+)
+
+# thrombi
+non_zero_studies <- !(dat_raw$nthrombi_small == 0 & dat_raw$nthrombi_big == 0)
+
+res_cva_size_or <- metabin(
+  event.e = nthrombi_small,
+  n.e = n_small,       
+  event.c = nthrombi_big,  
+  n.c = n_big,         
+  studlab = study,     
+  sm = "OR",           
+  method = "MH",
+  data = dat_raw[non_zero_studies, ]
+)
+
+
 #########
 # plots #
 #########
 
 # custom plot
-forest_plot <- function(x, save = FALSE, ...) {
+forest_plot <- function(x, save = T,
+                        colvars = c("effect", "ci", "w.random", "Var"), ...) {
+  
   var_name <- deparse(substitute(x)) 
   
   if (save) {
@@ -135,7 +183,7 @@ forest_plot <- function(x, save = FALSE, ...) {
   x$w.random <- weight
   meta::forest(x, weight.study = "random",
                # text.add = paste("Variance:", labels_var),
-               rightcols = c("effect", "ci", "w.random", "Var"),
+               rightcols = colvars,
                ...) #, xlim = c(0, 0.1))
 }
 
@@ -149,6 +197,10 @@ forest_plot(res_imaging)
 forest_plot(res_small)
 forest_plot(res_medium)
 forest_plot(res_large)
+
+forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm")
+forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"))
+forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"))
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
