@@ -126,12 +126,17 @@ forest_plot <- function(x, save = FALSE, ...) {
     on.exit(dev.off())
   }  
   
+  x$Var <- x$seTE^2
+  
   weight <- x$n / max(x$n)              # linear
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
   # weight <- log(1 + x$n)               # logarithmic
   
   x$w.random <- weight
-  meta::forest(x, weight.study = "random", ...) #, xlim = c(0, 0.1))
+  meta::forest(x, weight.study = "random",
+               # text.add = paste("Variance:", labels_var),
+               rightcols = c("effect", "ci", "w.random", "Var"),
+               ...) #, xlim = c(0, 0.1))
 }
 
 
@@ -188,9 +193,9 @@ mod_brm <- brm(aneurysm | trials(cohort) ~ 1 + (1|study),
 
 save(mod_brm, file = "data/mod_brm_pooled.RData")
 
-#########
-# plots #
-#########
+###########
+# ggplots #
+###########
 
 # https://mvuorre.github.io/posts/2016-09-29-bayesian-meta-analysis/
 library(ggplot2)
