@@ -10,7 +10,8 @@ library(dplyr)
 library(lme4)
 library(tidyr)
 
-filename <- "LVA and outcomes_2023 11 30.dta"
+filename <- "LVA and outcomes_size 2024 01 28.dta"
+# filename <- "LVA and outcomes_2023 11 30.dta"
 # filename <- "LVA and outcomes.dta"
 
 dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
@@ -18,10 +19,13 @@ dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
 
 dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
 
+# remove duplicate rows
+dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
+
 dat_raw <- dat_raw |> 
   mutate(across(
     c(aneurysm, ncva, nlvthrombus, nsvt_aneu_n, nscd,
-      n_small, n_medium, n_large, nscd_small, nscd_medium, nscd_large),
+      n_small, n_medium, n_large, nscd_small, nscd_medium, nscd_large, ncva_small, ncva_big, nthrombus_small, nthrombus_big),
     ~ replace_na(.x, 0)))
 
 ##############
@@ -107,12 +111,15 @@ dat_scdsize <- merge(dat_scdsize, dat_size, by = c("study", "size_label")) |>
   rename(nscd = value.x, n = value.y) |> 
   filter(!is.na(nscd))
 
+non_zero_studies <- dat_raw$n_big != 0
 res_nscd_big <-
-  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw)
+  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw[non_zero_studies, ])
 
+non_zero_studies <- dat_scdsize$n != 0
 res_nscd_size <-
-  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize)
+  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize[non_zero_studies, ])
 
+###################
 # pool odds-ratios
 
 # scd
@@ -128,8 +135,9 @@ res_scd_size_or <- metabin(
   method = "MH",             # Mantel-Haenszel method for pooling
   data = dat_raw[non_zero_studies, ]
 )
+res_scd_size_or$label.e <- "Small" 
+res_scd_size_or$label.c <- "Big"
 
-##TODO: data broken down by size needed
 # cva
 non_zero_studies <- !(dat_raw$ncva_small == 0 & dat_raw$ncva_big == 0)
 
@@ -143,28 +151,31 @@ res_cva_size_or <- metabin(
   method = "MH",
   data = dat_raw[non_zero_studies, ]
 )
+res_cva_size_or$label.e <- "Small" 
+res_cva_size_or$label.c <- "Big"
 
 # thrombi
-non_zero_studies <- !(dat_raw$nthrombi_small == 0 & dat_raw$nthrombi_big == 0)
+non_zero_studies <- !(dat_raw$nthrombus_small == 0 & dat_raw$nthrombus_big == 0)
 
-res_cva_size_or <- metabin(
-  event.e = nthrombi_small,
+res_thrombi_size_or <- metabin(
+  event.e = nthrombus_small,
   n.e = n_small,       
-  event.c = nthrombi_big,  
+  event.c = nthrombus_big,  
   n.c = n_big,         
   studlab = study,     
   sm = "OR",           
   method = "MH",
   data = dat_raw[non_zero_studies, ]
 )
-
+res_thrombi_size_or$label.e <- "Small" 
+res_thrombi_size_or$label.c <- "Big"
 
 #########
 # plots #
 #########
 
 # custom plot
-forest_plot <- function(x, save = T,
+forest_plot <- function(x, save = FALSE,
                         colvars = c("effect", "ci", "w.random", "Var"), ...) {
   
   var_name <- deparse(substitute(x)) 
@@ -187,7 +198,6 @@ forest_plot <- function(x, save = T,
                ...) #, xlim = c(0, 0.1))
 }
 
-
 forest_plot(res_aneurysm)
 forest_plot(res_stroke)
 forest_plot(res_lvthrombus)
@@ -199,8 +209,8 @@ forest_plot(res_medium)
 forest_plot(res_large)
 
 forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm")
-forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"))
-forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"))
+forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm")
+forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm")
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
