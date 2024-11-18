@@ -237,6 +237,7 @@ forest_plot(res_small)
 forest_plot(res_medium)
 forest_plot(res_large)
 
+# odds-ratios
 forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
