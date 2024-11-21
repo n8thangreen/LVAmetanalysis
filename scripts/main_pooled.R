@@ -112,9 +112,9 @@ res_nscd_size <-
 
 # custom plot
 forest_plot <- function(x, save = FALSE, ...) {
-  var_name <- deparse(substitute(x)) 
   
   if (save) {
+    var_name <- deparse(substitute(x))
     png(glue::glue("plots/{var_name}.png"), height = 500, width = 550)
     on.exit(dev.off())
   }  
@@ -128,7 +128,7 @@ forest_plot <- function(x, save = FALSE, ...) {
 }
 
 
-forest_plot(res)
+forest_plot(res_aneurysm)
 forest_plot(res_stroke)
 forest_plot(res_lvthrombus)
 forest_plot(res_svt_aneu)
@@ -153,7 +153,9 @@ forest_plot(res_nscd_size)
 #####################
 # fit model directly
 
-modf <- lme4::glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study), family="binomial", data = dat_raw)
+modf <- lme4::glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study),
+                    family = "binomial",
+                    data = dat_raw)
 summary(modf)
 ranef(modf)
 fixef(modf)
