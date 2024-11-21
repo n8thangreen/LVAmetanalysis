@@ -8,8 +8,10 @@
 library(meta)
 library(dplyr)
 library(lme4)
+library(tidyr)
 
-filename <- "LVA and outcomes_2023 11 30.dta"
+filename <- "LVA and outcomes_size 2024 01 28.dta"
+# filename <- "LVA and outcomes_2023 11 30.dta"
 # filename <- "LVA and outcomes.dta"
 
 dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
@@ -17,29 +19,47 @@ dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
 
 dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
 
+# remove duplicate rows
+dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
+
+# # replace NAs with 0
+# dat_raw <- dat_raw |> 
+#   mutate(across(
+#     c(aneurysm, ncva, nlvthrombus, nsvt_aneu_n, nscd,
+#       n_small, n_medium, n_large, nscd_small, nscd_medium, nscd_large, ncva_small, ncva_big, nthrombus_small, nthrombus_big),
+#     ~ replace_na(.x, 0)))
+
+
 ##############
 # frequentist
 ##############
 
 ## prevalence in total cohort
 
+# remove studies with NAs
 res_aneurysm <-
-  metaprop(event = aneurysm, n = cohort, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$aneurysm), ] |> 
+  metaprop(event = aneurysm, n = cohort, studlab = study, data = _)
 
 res_scd <-
-  metaprop(event = nscd, n = cohort, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$nscd), ] |> 
+  metaprop(event = nscd, n = cohort, studlab = study, data = _)
 
 res_imaging <-
-  metaprop(event = aneurysm, n = cohort, studlab = study, byvar = imaging, data = dat_raw)
+  dat_raw[!is.na(dat_raw$aneurysm), ] |> 
+  metaprop(event = aneurysm, n = cohort, studlab = study, byvar = imaging, data = _)
 
 res_small <-
-  metaprop(event = n_small, n = cohort, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$n_small), ] |> 
+  metaprop(event = n_small, n = cohort, studlab = study, data = _)
 
 res_medium <-
-  metaprop(event = n_medium, n = cohort, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$n_medium), ] |> 
+  metaprop(event = n_medium, n = cohort, studlab = study, data = _)
 
 res_large <-
-  metaprop(event = n_large, n = cohort, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$n_large), ] |> 
+  metaprop(event = n_large, n = cohort, studlab = study, data = _)
 
 dat_size <- dat_raw |> 
   reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"),
@@ -56,25 +76,32 @@ resbind_size <-
 ## prevalence in aneurysm group
 
 res_stroke <-
-  metaprop(event = ncva, n = aneurysm, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$ncva), ] |> 
+  metaprop(event = ncva, n = aneurysm, studlab = study, data = _)
 
 res_lvthrombus <-
-  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$nlvthrombus), ] |> 
+  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = _)
 
 res_svt_aneu <-
-  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$nsvt_aneu_n), ] |> 
+  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = _)
 
 res_scd_per_aneurysm <-
-  metaprop(event = nscd, n = aneurysm, studlab = study, byvar = atpy_n, data = dat_raw)
+  dat_raw[!is.na(dat_raw$nscd), ] |> 
+  metaprop(event = nscd, n = aneurysm, studlab = study, byvar = atpy_n, data = _)
 
 res_small_per_aneurysm <-
-  metaprop(event = n_small, n = aneurysm, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$n_small), ] |> 
+  metaprop(event = n_small, n = aneurysm, studlab = study, data = _)
 
 res_medium_per_aneurysm <-
-  metaprop(event = n_medium, n = aneurysm, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$n_medium), ] |> 
+  metaprop(event = n_medium, n = aneurysm, studlab = study, data = _)
 
 res_large_per_aneurysm <-
-  metaprop(event = n_large, n = aneurysm, studlab = study, data = dat_raw)
+  dat_raw[!is.na(dat_raw$n_large), ] |> 
+  metaprop(event = n_large, n = aneurysm, studlab = study, data = _)
 
 
 # The same comment applies for sudden death; can the forest plot show n_scd/aneurysm 
@@ -100,35 +127,106 @@ dat_scdsize <- merge(dat_scdsize, dat_size, by = c("study", "size_label")) |>
   rename(nscd = value.x, n = value.y) |> 
   filter(!is.na(nscd))
 
+non_zero_studies <- dat_raw$n_big != 0 & !is.na(dat_raw$n_big)
 res_nscd_big <-
-  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw)
+  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw[non_zero_studies, ])
 
+non_zero_studies <- dat_scdsize$n != 0 & !is.na(dat_scdsize$n)
 res_nscd_size <-
-  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize)
+  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize[non_zero_studies, ])
+
+###################
+# pool odds-ratios
+
+# scd
+non_zero_studies <-
+  !(dat_raw$nscd_small == 0 & dat_raw$nscd_big == 0) &
+  !(is.na(dat_raw$nscd_small) & is.na(dat_raw$nscd_big))
+
+res_scd_size_or <- metabin(
+  event.e = nscd_big,        # Events in the treatment group
+  n.e = n_big,               # Total number in treatment group
+  event.c = nscd_small,      # Events in the control group
+  n.c = n_small,             # Total number in control group
+  studlab = study,           # Study labels
+  sm = "OR",                 # Summary measure: odds ratio (OR)
+  method = "MH",             # Mantel-Haenszel method for pooling
+  data = dat_raw[non_zero_studies, ]
+)
+res_scd_size_or$label.e <- "Big" 
+res_scd_size_or$label.c <- "Small"
+
+# cva
+non_zero_studies <-
+  !(dat_raw$ncva_small == 0 & dat_raw$ncva_big == 0) &
+  !(is.na(dat_raw$ncva_small) & is.na(dat_raw$ncva_big))
+
+res_cva_size_or <- metabin(
+  event.e = ncva_big,
+  n.e = n_big,       
+  event.c = ncva_small,  
+  n.c = n_small,         
+  studlab = study,     
+  sm = "OR",           
+  method = "MH",
+  data = dat_raw[non_zero_studies, ]
+)
+res_cva_size_or$label.e <- "Big" 
+res_cva_size_or$label.c <- "Small"
+
+# thrombi
+non_zero_studies <-
+  !(dat_raw$nthrombus_small == 0 & dat_raw$nthrombus_big == 0) &
+  !(is.na(dat_raw$nthrombus_small) & is.na(dat_raw$nthrombus_big))
+
+res_thrombi_size_or <- metabin(
+  event.e = nthrombus_big,
+  n.e = n_big,       
+  event.c = nthrombus_small,  
+  n.c = n_small,         
+  studlab = study,     
+  sm = "OR",           
+  method = "MH",
+  data = dat_raw[non_zero_studies, ]
+)
+res_thrombi_size_or$label.e <- "Big" 
+res_thrombi_size_or$label.c <- "Small"
 
 #########
 # plots #
 #########
 
 # custom plot
-forest_plot <- function(x, save = FALSE, ...) {
-  
+forest_plot <- function(x, save = TRUE,
+                        colvars = c("effect", "ci", "w.random", "Var"),
+                        rhs_text = "Treatment",
+                        lhs_text = "Control", ...) {
   if (save) {
-    var_name <- deparse(substitute(x))
-    png(glue::glue("plots/{var_name}.png"), height = 500, width = 550)
+    var_name <- deparse(substitute(x)) 
+    png(glue::glue("plots/{var_name}.png"), height = 500, width = 650)
     on.exit(dev.off())
   }  
   
-  weight <- x$n / max(x$n)              # linear
+  x$Var <- x$seTE^2
+  
+  # weight <- x$n / max(x$n)              # linear
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
   # weight <- log(1 + x$n)               # logarithmic
+  weight <- 1/x$Var
   
   x$w.random <- weight
-  meta::forest(x, weight.study = "random", ...) #, xlim = c(0, 0.1))
+  meta::forest(x, weight.study = "random",
+               label.left = glue::glue("Favours {lhs_text}"),
+               label.right = glue::glue("Favours {rhs_text}"),
+               # text.add = paste("Variance:", labels_var),
+               rightcols = colvars,
+               ...) #, xlim = c(0, 0.1))
 }
 
-
 forest_plot(res_aneurysm)
+# grid::grid.text("Favours Control", x = 0.3, y = 0.1)
+# grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
+
 forest_plot(res_stroke)
 forest_plot(res_lvthrombus)
 forest_plot(res_svt_aneu)
@@ -137,6 +235,11 @@ forest_plot(res_imaging)
 forest_plot(res_small)
 forest_plot(res_medium)
 forest_plot(res_large)
+
+# odds-ratios
+forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
@@ -183,9 +286,9 @@ mod_brm <- brm(aneurysm | trials(cohort) ~ 1 + (1|study),
 
 save(mod_brm, file = "data/mod_brm_pooled.RData")
 
-#########
-# plots #
-#########
+###########
+# ggplots #
+###########
 
 # https://mvuorre.github.io/posts/2016-09-29-bayesian-meta-analysis/
 library(ggplot2)
