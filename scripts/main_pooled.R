@@ -34,7 +34,7 @@ dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
 # frequentist
 ##############
 
-## prevalence in total cohort
+## prevalence in _total_ cohort
 
 # remove studies with NAs
 res_aneurysm <-
@@ -73,7 +73,7 @@ resbind_size <-
 ##TODO: error
 # forest(resbind_size, print.I2 = FALSE, print.pval.Q = FALSE, print.subgroup.labels = FALSE)
 
-## prevalence in aneurysm group
+## prevalence in _aneurysm_ group
 
 res_stroke <-
   dat_raw[!is.na(dat_raw$ncva), ] |> 
@@ -86,6 +86,10 @@ res_lvthrombus <-
 res_svt_aneu <-
   dat_raw[!is.na(dat_raw$nsvt_aneu_n), ] |> 
   metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = _)
+
+res_scd_in_lvaa <-
+  dat_raw[!is.na(dat_raw$nscd), ] |> 
+  metaprop(event = nscd, n = aneurysm, studlab = study, data = _)
 
 res_scd_per_aneurysm <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
