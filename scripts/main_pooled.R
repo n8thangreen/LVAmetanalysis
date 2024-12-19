@@ -4,6 +4,7 @@
 # for outcomes:
 #  stroke, LV thrombus, SCD, imaging, size
 
+# using Freeman-Tukey double arcsine transformation
 
 library(meta)
 library(dplyr)
@@ -39,33 +40,33 @@ dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
 # remove studies with NAs
 res_aneurysm <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, data = _)
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = "PFT", data = _)
 
 res_scd <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = cohort, studlab = study, data = _)
+  metaprop(event = nscd, n = cohort, studlab = study, sm = "PFT", data = _)
 
 res_imaging <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, byvar = imaging, data = _)
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = "PFT", subgroup = imaging, data = _)
 
 res_small <-
   dat_raw[!is.na(dat_raw$n_small), ] |> 
-  metaprop(event = n_small, n = cohort, studlab = study, data = _)
+  metaprop(event = n_small, n = cohort, studlab = study, sm = "PFT", data = _)
 
 res_medium <-
   dat_raw[!is.na(dat_raw$n_medium), ] |> 
-  metaprop(event = n_medium, n = cohort, studlab = study, data = _)
+  metaprop(event = n_medium, n = cohort, studlab = study, sm = "PFT", data = _)
 
 res_large <-
   dat_raw[!is.na(dat_raw$n_large), ] |> 
-  metaprop(event = n_large, n = cohort, studlab = study, data = _)
+  metaprop(event = n_large, n = cohort, studlab = study, sm = "PFT", data = _)
 
 dat_size <- dat_raw |> 
   reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"),
                              variable.name = "size")
 res_size <-
-  metaprop(event = value, n = cohort, studlab = study, byvar = size, data = dat_size)
+  metaprop(event = value, n = cohort, studlab = study, sm = "PFT", subgroup = size, data = dat_size)
 
 resbind_size <-
   metabind(res_small, res_medium, res_large,
@@ -77,31 +78,31 @@ resbind_size <-
 
 res_stroke <-
   dat_raw[!is.na(dat_raw$ncva), ] |> 
-  metaprop(event = ncva, n = aneurysm, studlab = study, data = _)
+  metaprop(event = ncva, n = aneurysm, studlab = study, sm = "PFT", data = _)
 
 res_lvthrombus <-
   dat_raw[!is.na(dat_raw$nlvthrombus), ] |> 
-  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = _)
+  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, sm = "PFT", data = _)
 
 res_svt_aneu <-
   dat_raw[!is.na(dat_raw$nsvt_aneu_n), ] |> 
-  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = _)
+  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, sm = "PFT", data = _)
 
 res_scd_in_lvaa <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = aneurysm, studlab = study, data = _)
+  metaprop(event = nscd, n = aneurysm, studlab = study, sm = "PFT", data = _)
 
 res_scd_per_aneurysm <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = aneurysm, studlab = study, byvar = atpy_n, data = _)
+  metaprop(event = nscd, n = aneurysm, studlab = study, sm = "PFT", subgroup = atpy_n, data = _)
 
 res_small_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_small), ] |> 
-  metaprop(event = n_small, n = aneurysm, studlab = study, data = _)
+  metaprop(event = n_small, n = aneurysm, studlab = study, sm = "PFT", data = _)
 
 res_medium_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_medium), ] |> 
-  metaprop(event = n_medium, n = aneurysm, studlab = study, data = _)
+  metaprop(event = n_medium, n = aneurysm, studlab = study, sm = "PFT", data = _)
 
 res_large_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_large), ] |> 
