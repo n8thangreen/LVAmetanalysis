@@ -37,36 +37,59 @@ dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
 
 ## prevalence in _total_ cohort
 
+trans_method <- "PFT"
+
 # remove studies with NAs
 res_aneurysm <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, sm = "PFT", data = _)
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_scd <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = cohort, studlab = study, sm = "PFT", data = _)
+  metaprop(event = nscd, n = cohort, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_imaging <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, sm = "PFT", subgroup = imaging, data = _)
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, subgroup = imaging,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_small <-
   dat_raw[!is.na(dat_raw$n_small), ] |> 
-  metaprop(event = n_small, n = cohort, studlab = study, sm = "PFT", data = _)
+  metaprop(event = n_small, n = cohort, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_medium <-
   dat_raw[!is.na(dat_raw$n_medium), ] |> 
-  metaprop(event = n_medium, n = cohort, studlab = study, sm = "PFT", data = _)
+  metaprop(event = n_medium, n = cohort, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_large <-
   dat_raw[!is.na(dat_raw$n_large), ] |> 
-  metaprop(event = n_large, n = cohort, studlab = study, sm = "PFT", data = _)
+  metaprop(event = n_large, n = cohort, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
-dat_size <- dat_raw |> 
-  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"),
-                             variable.name = "size")
 res_size <-
-  metaprop(event = value, n = cohort, studlab = study, sm = "PFT", subgroup = size, data = dat_size)
+  dat_raw |> 
+  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"),
+                             variable.name = "size") |> 
+  metaprop(event = value, n = cohort, studlab = study, sm = trans_method, subgroup = size,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 resbind_size <-
   metabind(res_small, res_medium, res_large,
@@ -78,36 +101,59 @@ resbind_size <-
 
 res_stroke <-
   dat_raw[!is.na(dat_raw$ncva), ] |> 
-  metaprop(event = ncva, n = aneurysm, studlab = study, sm = "PFT", data = _)
+  metaprop(event = ncva, n = aneurysm, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_lvthrombus <-
   dat_raw[!is.na(dat_raw$nlvthrombus), ] |> 
-  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, sm = "PFT", data = _)
+  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_svt_aneu <-
   dat_raw[!is.na(dat_raw$nsvt_aneu_n), ] |> 
-  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, sm = "PFT", data = _)
+  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_scd_in_lvaa <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = aneurysm, studlab = study, sm = "PFT", data = _)
+  metaprop(event = nscd, n = aneurysm, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)           
 
 res_scd_per_aneurysm <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = aneurysm, studlab = study, sm = "PFT", subgroup = atpy_n, data = _)
+  metaprop(event = nscd, n = aneurysm, studlab = study, sm = trans_method, subgroup = atpy_n,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_small_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_small), ] |> 
-  metaprop(event = n_small, n = aneurysm, studlab = study, sm = "PFT", data = _)
+  metaprop(event = n_small, n = aneurysm, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_medium_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_medium), ] |> 
-  metaprop(event = n_medium, n = aneurysm, studlab = study, sm = "PFT", data = _)
+  metaprop(event = n_medium, n = aneurysm, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_large_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_large), ] |> 
-  metaprop(event = n_large, n = aneurysm, studlab = study, data = _)
-
+  metaprop(event = n_large, n = aneurysm, studlab = study, sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 # The same comment applies for sudden death; can the forest plot show n_scd/aneurysm 
 # (rather than n_scd/cohort? Could this be stratified with variable atpy_n (which I have included to the attached dataset).
@@ -134,11 +180,19 @@ dat_scdsize <- merge(dat_scdsize, dat_size, by = c("study", "size_label")) |>
 
 non_zero_studies <- dat_raw$n_big != 0 & !is.na(dat_raw$n_big)
 res_nscd_big <-
-  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw[non_zero_studies, ])
+  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw[non_zero_studies, ],
+           sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP"   # exact binomial confidence intervals
+  )
 
 non_zero_studies <- dat_scdsize$n != 0 & !is.na(dat_scdsize$n)
 res_nscd_size <-
-  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize[non_zero_studies, ])
+  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize[non_zero_studies, ],
+           sm = trans_method,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP"   # exact binomial confidence intervals
+  )
 
 ###################
 # pool odds-ratios
