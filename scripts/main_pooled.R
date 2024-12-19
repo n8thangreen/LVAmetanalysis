@@ -38,6 +38,7 @@ dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
 ## prevalence in _total_ cohort
 
 trans_method <- "PFT"
+# trans_method <- "PLOGIT"
 
 # remove studies with NAs
 res_aneurysm <-
@@ -188,7 +189,7 @@ res_nscd_big <-
 
 non_zero_studies <- dat_scdsize$n != 0 & !is.na(dat_scdsize$n)
 res_nscd_size <-
-  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize[non_zero_studies, ],
+  metaprop(event = nscd, n = n, studlab = study, subgroup = size_label, data = dat_scdsize[non_zero_studies, ],
            sm = trans_method,
            backtransf = TRUE,  # proportions
            method.ci = "CP"   # exact binomial confidence intervals
@@ -256,13 +257,13 @@ res_thrombi_size_or$label.c <- "Small"
 #########
 
 # custom plot
-forest_plot <- function(x, save = TRUE,
+forest_plot <- function(x, save = TRUE, filetxt = "",
                         colvars = c("effect", "ci", "w.random", "Var"),
                         rhs_text = "Treatment",
                         lhs_text = "Control", ...) {
   if (save) {
     var_name <- deparse(substitute(x)) 
-    png(glue::glue("plots/{var_name}.png"), height = 500, width = 650)
+    png(glue::glue("plots/{var_name}{filetxt}.png"), height = 500, width = 650)
     on.exit(dev.off())
   }  
   
@@ -278,22 +279,23 @@ forest_plot <- function(x, save = TRUE,
                label.left = glue::glue("Favours {lhs_text}"),
                label.right = glue::glue("Favours {rhs_text}"),
                # text.add = paste("Variance:", labels_var),
+               # prediction = TRUE,
                rightcols = colvars,
                ...) #, xlim = c(0, 0.1))
 }
 
-forest_plot(res_aneurysm)
+forest_plot(res_aneurysm, filetxt = trans_method)
 # grid::grid.text("Favours Control", x = 0.3, y = 0.1)
 # grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
 
-forest_plot(res_stroke)
-forest_plot(res_lvthrombus)
-forest_plot(res_svt_aneu)
-forest_plot(res_scd)
-forest_plot(res_imaging)
-forest_plot(res_small)
-forest_plot(res_medium)
-forest_plot(res_large)
+forest_plot(res_stroke, filetxt = trans_method)
+forest_plot(res_lvthrombus, filetxt = trans_method)
+forest_plot(res_svt_aneu, filetxt = trans_method)
+forest_plot(res_scd, filetxt = trans_method)
+forest_plot(res_imaging, filetxt = trans_method)
+forest_plot(res_small, filetxt = trans_method)
+forest_plot(res_medium, filetxt = trans_method)
+forest_plot(res_large, filetxt = trans_method)
 
 # odds-ratios
 forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
@@ -302,14 +304,14 @@ forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"), plotwidth =
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
-forest_plot(res_size)
+forest_plot(res_size, filetxt = trans_method)
 
-forest_plot(res_small_per_aneurysm)
-forest_plot(res_medium_per_aneurysm)
-forest_plot(res_large_per_aneurysm)
-forest_plot(res_scd_per_aneurysm)
+forest_plot(res_small_per_aneurysm, filetxt = trans_method)
+forest_plot(res_medium_per_aneurysm, filetxt = trans_method)
+forest_plot(res_large_per_aneurysm, filetxt = trans_method)
+forest_plot(res_scd_per_aneurysm, filetxt = trans_method)
 # forest(res_nscd_big)
-forest_plot(res_nscd_size)
+forest_plot(res_nscd_size, filetxt = trans_method)
 
 
 #####################
