@@ -4,6 +4,7 @@
 # for outcomes:
 #  stroke, LV thrombus, SCD, imaging, size
 
+# using Freeman-Tukey double arcsine transformation
 
 library(meta)
 library(dplyr)
@@ -36,36 +37,67 @@ dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
 
 ## prevalence in _total_ cohort
 
+trans_method <- "PFT"
+# trans_method <- "PLOGIT"
+
 # remove studies with NAs
 res_aneurysm <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, data = _)
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_scd <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = cohort, studlab = study, data = _)
+  metaprop(event = nscd, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_imaging <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, byvar = imaging, data = _)
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, subgroup = imaging, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_small <-
   dat_raw[!is.na(dat_raw$n_small), ] |> 
-  metaprop(event = n_small, n = cohort, studlab = study, data = _)
+  metaprop(event = n_small, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_medium <-
   dat_raw[!is.na(dat_raw$n_medium), ] |> 
-  metaprop(event = n_medium, n = cohort, studlab = study, data = _)
+  metaprop(event = n_medium, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_large <-
   dat_raw[!is.na(dat_raw$n_large), ] |> 
-  metaprop(event = n_large, n = cohort, studlab = study, data = _)
+  metaprop(event = n_large, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
-dat_size <- dat_raw |> 
-  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"),
-                             variable.name = "size")
 res_size <-
-  metaprop(event = value, n = cohort, studlab = study, byvar = size, data = dat_size)
+  dat_raw |> 
+  reshape2:::melt.data.frame(measure.vars = c("n_small", "n_medium", "n_large"),
+                             variable.name = "size") |> 
+  metaprop(event = value, n = cohort, studlab = study, sm = trans_method, subgroup = size, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 resbind_size <-
   metabind(res_small, res_medium, res_large,
@@ -77,36 +109,67 @@ resbind_size <-
 
 res_stroke <-
   dat_raw[!is.na(dat_raw$ncva), ] |> 
-  metaprop(event = ncva, n = aneurysm, studlab = study, data = _)
+  metaprop(event = ncva, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_lvthrombus <-
   dat_raw[!is.na(dat_raw$nlvthrombus), ] |> 
-  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, data = _)
+  metaprop(event = nlvthrombus, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_svt_aneu <-
   dat_raw[!is.na(dat_raw$nsvt_aneu_n), ] |> 
-  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, data = _)
+  metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_scd_in_lvaa <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = aneurysm, studlab = study, data = _)
+  metaprop(event = nscd, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)           
 
 res_scd_per_aneurysm <-
   dat_raw[!is.na(dat_raw$nscd), ] |> 
-  metaprop(event = nscd, n = aneurysm, studlab = study, byvar = atpy_n, data = _)
+  metaprop(event = nscd, n = aneurysm, studlab = study, sm = trans_method, subgroup = atpy_n, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_small_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_small), ] |> 
-  metaprop(event = n_small, n = aneurysm, studlab = study, data = _)
+  metaprop(event = n_small, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_medium_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_medium), ] |> 
-  metaprop(event = n_medium, n = aneurysm, studlab = study, data = _)
+  metaprop(event = n_medium, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 res_large_per_aneurysm <-
   dat_raw[!is.na(dat_raw$n_large), ] |> 
-  metaprop(event = n_large, n = aneurysm, studlab = study, data = _)
-
+  metaprop(event = n_large, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
+           backtransf = TRUE,  # proportions
+           common = FALSE,
+           method.ci = "CP",   # exact binomial confidence intervals
+           data = _)
 
 # The same comment applies for sudden death; can the forest plot show n_scd/aneurysm 
 # (rather than n_scd/cohort? Could this be stratified with variable atpy_n (which I have included to the attached dataset).
@@ -133,11 +196,21 @@ dat_scdsize <- merge(dat_scdsize, dat_size, by = c("study", "size_label")) |>
 
 non_zero_studies <- dat_raw$n_big != 0 & !is.na(dat_raw$n_big)
 res_nscd_big <-
-  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw[non_zero_studies, ])
+  metaprop(event = nscd_big, n = n_big, studlab = study, data = dat_raw[non_zero_studies, ],
+           sm = trans_method, method.tau = "REML",
+           common = FALSE,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP"   # exact binomial confidence intervals
+  )
 
 non_zero_studies <- dat_scdsize$n != 0 & !is.na(dat_scdsize$n)
 res_nscd_size <-
-  metaprop(event = nscd, n = n, studlab = study, byvar = size_label, data = dat_scdsize[non_zero_studies, ])
+  metaprop(event = nscd, n = n, studlab = study, subgroup = size_label, data = dat_scdsize[non_zero_studies, ],
+           sm = trans_method, method.tau = "REML",
+           common = FALSE,
+           backtransf = TRUE,  # proportions
+           method.ci = "CP"   # exact binomial confidence intervals
+  )
 
 ###################
 # pool odds-ratios
@@ -155,7 +228,8 @@ res_scd_size_or <- metabin(
   studlab = study,           # Study labels
   sm = "OR",                 # Summary measure: odds ratio (OR)
   method = "MH",             # Mantel-Haenszel method for pooling
-  data = dat_raw[non_zero_studies, ]
+  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  common = FALSE
 )
 res_scd_size_or$label.e <- "Small" 
 res_scd_size_or$label.c <- "Big"
@@ -173,7 +247,8 @@ res_cva_size_or <- metabin(
   studlab = study,     
   sm = "OR",           
   method = "MH",
-  data = dat_raw[non_zero_studies, ]
+  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  common = FALSE
 )
 res_cva_size_or$label.e <- "Small" 
 res_cva_size_or$label.c <- "Big"
@@ -191,7 +266,8 @@ res_thrombi_size_or <- metabin(
   studlab = study,     
   sm = "OR",           
   method = "MH",
-  data = dat_raw[non_zero_studies, ]
+  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  common = FALSE
 )
 res_thrombi_size_or$label.e <- "Small" 
 res_thrombi_size_or$label.c <- "Big"
@@ -201,15 +277,14 @@ res_thrombi_size_or$label.c <- "Big"
 #########
 
 # custom plot
-forest_plot <- function(x, save = TRUE,
-                        colvars = c("effect", "ci", "w.random", "Var"),
+forest_plot <- function(x, save = TRUE, filetxt = "",
+                        colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
                         lhs_text = "Control", ...) {
   
-  var_name <- deparse(substitute(x)) 
-  
   if (save) {
-    png(glue::glue("plots/{var_name}.png"), height = 500, width = 650)
+    var_name <- deparse(substitute(x)) 
+    png(glue::glue("plots/{var_name}{filetxt}.png"), height = 500, width = 650)
     on.exit(dev.off())
   }  
   
@@ -224,23 +299,24 @@ forest_plot <- function(x, save = TRUE,
                label.left = glue::glue("Favours {lhs_text}"),
                label.right = glue::glue("Favours {rhs_text}"),
                # text.add = paste("Variance:", labels_var),
+               # prediction = TRUE,
                rightcols = colvars,
                ...) #, xlim = c(0, 0.1))
 }
 
-forest_plot(res_aneurysm)
+forest_plot(res_aneurysm, filetxt = trans_method)
 # grid::grid.text("Favours Control", x = 0.3, y = 0.1)
 # grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
 
-forest_plot(res_scd_in_lvaa)
-forest_plot(res_stroke)
-forest_plot(res_lvthrombus)
-forest_plot(res_svt_aneu)
-forest_plot(res_scd)
-forest_plot(res_imaging)
-forest_plot(res_small)
-forest_plot(res_medium)
-forest_plot(res_large)
+forest_plot(res_scd_in_lvaa, filetxt = trans_method)
+forest_plot(res_stroke, filetxt = trans_method)
+forest_plot(res_lvthrombus, filetxt = trans_method)
+forest_plot(res_svt_aneu, filetxt = trans_method)
+forest_plot(res_scd, filetxt = trans_method)
+forest_plot(res_imaging, filetxt = trans_method)
+forest_plot(res_small, filetxt = trans_method)
+forest_plot(res_medium, filetxt = trans_method)
+forest_plot(res_large, filetxt = trans_method)
 
 # odds-ratios
 forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Small", rhs_text = "Big")
@@ -249,14 +325,15 @@ forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"), plotwidth =
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
-forest_plot(res_size)
+forest_plot(res_size, filetxt = trans_method)
 
-forest_plot(res_small_per_aneurysm)
-forest_plot(res_medium_per_aneurysm)
-forest_plot(res_large_per_aneurysm)
-forest_plot(res_scd_per_aneurysm)
+forest_plot(res_small_per_aneurysm, filetxt = trans_method)
+forest_plot(res_medium_per_aneurysm, filetxt = trans_method)
+forest_plot(res_large_per_aneurysm, filetxt = trans_method)
+forest_plot(res_scd_in_lvaa, filetxt = trans_method)
+forest_plot(res_scd_per_aneurysm, filetxt = trans_method)
 # forest(res_nscd_big)
-forest_plot(res_nscd_size)
+forest_plot(res_nscd_size, filetxt = trans_method)
 
 
 #####################
