@@ -3,7 +3,7 @@
 # of aneurysm (LVA) data
 # for outcomes:
 #  stroke, LV thrombus, SCD, imaging, size
-
+#
 # using Freeman-Tukey double arcsine transformation
 
 library(meta)
@@ -221,18 +221,19 @@ non_zero_studies <-
   !(is.na(dat_raw$nscd_small) & is.na(dat_raw$nscd_big))
 
 res_scd_size_or <- metabin(
-  event.e = nscd_small,      # Events in the treatment group
-  n.e = n_small,             # Total number in treatment group
-  event.c = nscd_big,        # Events in the control group
-  n.c = n_big,               # Total number in control group
+  event.e = nscd_big,        # Events in the treatment group
+  n.e = n_big,               # Total number in treatment group
+  event.c = nscd_small,      # Events in the control group
+  n.c = n_small,             # Total number in control group
   studlab = study,           # Study labels
   sm = "OR",                 # Summary measure: odds ratio (OR)
   method = "MH",             # Mantel-Haenszel method for pooling
-  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  data = dat_raw[non_zero_studies, ],
+  method.tau = "REML",
   common = FALSE
 )
-res_scd_size_or$label.e <- "Small" 
-res_scd_size_or$label.c <- "Big"
+res_scd_size_or$label.e <- "Big"
+res_scd_size_or$label.c <- "Small" 
 
 # cva
 non_zero_studies <-
@@ -240,18 +241,19 @@ non_zero_studies <-
   !(is.na(dat_raw$ncva_small) & is.na(dat_raw$ncva_big))
 
 res_cva_size_or <- metabin(
-  event.e = ncva_small,
-  n.e = n_small,       
-  event.c = ncva_big,  
-  n.c = n_big,         
+  event.e = ncva_big,
+  n.e = n_big,       
+  event.c = ncva_small,  
+  n.c = n_small,     
   studlab = study,     
   sm = "OR",           
   method = "MH",
-  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  data = dat_raw[non_zero_studies, ],
+  method.tau = "REML",
   common = FALSE
 )
-res_cva_size_or$label.e <- "Small" 
-res_cva_size_or$label.c <- "Big"
+res_cva_size_or$label.e <- "Big"
+res_cva_size_or$label.c <- "Small" 
 
 # thrombi
 non_zero_studies <-
@@ -259,18 +261,80 @@ non_zero_studies <-
   !(is.na(dat_raw$nthrombus_small) & is.na(dat_raw$nthrombus_big))
 
 res_thrombi_size_or <- metabin(
-  event.e = nthrombus_small,
-  n.e = n_small,       
-  event.c = nthrombus_big,  
-  n.c = n_big,         
+  event.e = nthrombus_big,
+  n.e = n_big,       
+  event.c = nthrombus_small,  
+  n.c = n_small,        
   studlab = study,     
   sm = "OR",           
   method = "MH",
-  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  data = dat_raw[non_zero_studies, ],
+  method.tau = "REML",
   common = FALSE
 )
-res_thrombi_size_or$label.e <- "Small" 
-res_thrombi_size_or$label.c <- "Big"
+res_thrombi_size_or$label.e <- "Big"
+res_thrombi_size_or$label.c <- "Small" 
+
+###################
+# Pool odds ratios using Peto's method
+
+# scd
+non_zero_studies <- 
+  !(dat_raw$nscd_small == 0 & dat_raw$nscd_big == 0) & 
+  !(is.na(dat_raw$nscd_small) & is.na(dat_raw$nscd_big))
+
+res_scd_size_or_peto <- metabin(
+  event.e = nscd_big,
+  n.e = n_big,
+  event.c = nscd_small,
+  n.c = n_small,
+  studlab = study,
+  sm = "OR",
+  method = "Peto",
+  data = dat_raw[non_zero_studies, ],
+  common = FALSE
+)
+
+res_scd_size_or_peto$label.e <- "Big"
+res_scd_size_or_peto$label.c <- "Small"
+
+# cva
+non_zero_studies <- 
+  !(dat_raw$ncva_small == 0 & dat_raw$ncva_big == 0) & 
+  !(is.na(dat_raw$ncva_small) & is.na(dat_raw$ncva_big))
+
+res_cva_size_or_peto <- metabin(
+  event.e = ncva_big,  
+  n.e = n_big,         
+  event.c = ncva_small,
+  n.c = n_small,       
+  studlab = study,     
+  sm = "OR",
+  method = "Peto",
+  data = dat_raw[non_zero_studies, ],
+  common = FALSE
+)
+res_cva_size_or_peto$label.e <- "Big"
+res_cva_size_or_peto$label.c <- "Small"
+
+# thrombi
+non_zero_studies <- 
+  !(dat_raw$nthrombus_small == 0 & dat_raw$nthrombus_big == 0) & 
+  !(is.na(dat_raw$nthrombus_small) & is.na(dat_raw$nthrombus_big))
+
+res_thrombi_size_or_peto <- metabin(
+  event.e = nthrombus_big,  
+  n.e = n_big,         
+  event.c = nthrombus_small,
+  n.c = n_small,       
+  studlab = study,     
+  sm = "OR",
+  method = "Peto",
+  data = dat_raw[non_zero_studies, ],
+  common = FALSE
+)
+res_thrombi_size_or_peto$label.e <- "Big"
+res_thrombi_size_or_peto$label.c <- "Small"
 
 #########
 # plots #
@@ -287,10 +351,14 @@ forest_plot <- function(x, save = TRUE, filetxt = "",
     png(glue::glue("plots/{var_name}{filetxt}.png"), height = 500, width = 650)
     on.exit(dev.off())
   }  
-  
+
   x$Var <- x$seTE^2
   
-  weight <- x$n / max(x$n)              # linear
+  if (x$sm == "OR") {
+    weight <- 1 / x$Var
+  } else {
+    weight <- x$n / max(x$n)              # linear
+  }
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
   # weight <- log(1 + x$n)               # logarithmic
   
@@ -319,9 +387,19 @@ forest_plot(res_medium, filetxt = trans_method)
 forest_plot(res_large, filetxt = trans_method)
 
 # odds-ratios
-forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Small", rhs_text = "Big")
-forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Small", rhs_text = "Big")
-forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Small", rhs_text = "Big")
+forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+
+forest_plot(res_scd_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_cva_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_thrombi_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
