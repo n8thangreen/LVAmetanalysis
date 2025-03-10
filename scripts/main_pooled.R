@@ -3,7 +3,7 @@
 # of aneurysm (LVA) data
 # for outcomes:
 #  stroke, LV thrombus, SCD, imaging, size
-
+#
 # using Freeman-Tukey double arcsine transformation
 
 library(meta)
@@ -15,7 +15,7 @@ filename <- "LVA and outcomes_size 2024 01 28.dta"
 # filename <- "LVA and outcomes_2023 11 30.dta"
 # filename <- "LVA and outcomes.dta"
 
-dat_raw <- foreign::read.dta(glue::glue("data/{filename}"))
+dat_raw <- foreign::read.dta(here::here(glue::glue("data/{filename}")))
 # write.csv(dat_raw, file = "data/LVA-and-outcomes.csv")
 
 dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
@@ -228,11 +228,12 @@ res_scd_size_or <- metabin(
   studlab = study,           # Study labels
   sm = "OR",                 # Summary measure: odds ratio (OR)
   method = "MH",             # Mantel-Haenszel method for pooling
-  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  data = dat_raw[non_zero_studies, ],
+  method.tau = "REML",
   common = FALSE
 )
-res_scd_size_or$label.e <- "Big" 
-res_scd_size_or$label.c <- "Small"
+res_scd_size_or$label.e <- "Big"
+res_scd_size_or$label.c <- "Small" 
 
 # cva
 non_zero_studies <-
@@ -243,15 +244,16 @@ res_cva_size_or <- metabin(
   event.e = ncva_big,
   n.e = n_big,       
   event.c = ncva_small,  
-  n.c = n_small,         
+  n.c = n_small,     
   studlab = study,     
   sm = "OR",           
   method = "MH",
-  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  data = dat_raw[non_zero_studies, ],
+  method.tau = "REML",
   common = FALSE
 )
-res_cva_size_or$label.e <- "Big" 
-res_cva_size_or$label.c <- "Small"
+res_cva_size_or$label.e <- "Big"
+res_cva_size_or$label.c <- "Small" 
 
 # thrombi
 non_zero_studies <-
@@ -262,52 +264,125 @@ res_thrombi_size_or <- metabin(
   event.e = nthrombus_big,
   n.e = n_big,       
   event.c = nthrombus_small,  
-  n.c = n_small,         
+  n.c = n_small,        
   studlab = study,     
   sm = "OR",           
   method = "MH",
-  data = dat_raw[non_zero_studies, ], method.tau = "REML",
+  data = dat_raw[non_zero_studies, ],
+  method.tau = "REML",
   common = FALSE
 )
-res_thrombi_size_or$label.e <- "Big" 
-res_thrombi_size_or$label.c <- "Small"
+res_thrombi_size_or$label.e <- "Big"
+res_thrombi_size_or$label.c <- "Small" 
+
+###################
+# pool odds ratios using Peto's method
+
+# scd
+non_zero_studies <- 
+  !(dat_raw$nscd_small == 0 & dat_raw$nscd_big == 0) & 
+  !(is.na(dat_raw$nscd_small) & is.na(dat_raw$nscd_big))
+
+res_scd_size_or_peto <- metabin(
+  event.e = nscd_big,
+  n.e = n_big,
+  event.c = nscd_small,
+  n.c = n_small,
+  studlab = study,
+  sm = "OR",
+  method = "Peto",
+  data = dat_raw[non_zero_studies, ],
+  common = TRUE,
+  random = FALSE
+)
+
+res_scd_size_or_peto$label.e <- "Big"
+res_scd_size_or_peto$label.c <- "Small"
+
+# cva
+non_zero_studies <- 
+  !(dat_raw$ncva_small == 0 & dat_raw$ncva_big == 0) & 
+  !(is.na(dat_raw$ncva_small) & is.na(dat_raw$ncva_big))
+
+res_cva_size_or_peto <- metabin(
+  event.e = ncva_big,  
+  n.e = n_big,         
+  event.c = ncva_small,
+  n.c = n_small,       
+  studlab = study,     
+  sm = "OR",
+  method = "Peto",
+  data = dat_raw[non_zero_studies, ],
+  common = TRUE,
+  random = FALSE
+)
+res_cva_size_or_peto$label.e <- "Big"
+res_cva_size_or_peto$label.c <- "Small"
+
+# thrombi
+non_zero_studies <- 
+  !(dat_raw$nthrombus_small == 0 & dat_raw$nthrombus_big == 0) & 
+  !(is.na(dat_raw$nthrombus_small) & is.na(dat_raw$nthrombus_big))
+
+res_thrombi_size_or_peto <- metabin(
+  event.e = nthrombus_big,  
+  n.e = n_big,         
+  event.c = nthrombus_small,
+  n.c = n_small,       
+  studlab = study,     
+  sm = "OR",
+  method = "Peto",
+  data = dat_raw[non_zero_studies, ],
+  common = TRUE,
+  random = FALSE
+)
+res_thrombi_size_or_peto$label.e <- "Big"
+res_thrombi_size_or_peto$label.c <- "Small"
 
 #########
 # plots #
 #########
 
 # custom plot
-forest_plot <- function(x, save = TRUE, filetxt = "",
+forest_plot <- function(x, save = TRUE,
+                        filetxt = "",
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
                         lhs_text = "Control", ...) {
+  
   if (save) {
     var_name <- deparse(substitute(x)) 
     png(glue::glue("plots/{var_name}{filetxt}.png"), height = 500, width = 650)
     on.exit(dev.off())
   }  
-  
+
   x$Var <- x$seTE^2
   
-  # weight <- x$n / max(x$n)              # linear
+  if (x$sm == "OR") {
+    weight <- 1 / x$Var
+  } else {
+    weight <- x$n / max(x$n)              # linear
+  }
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
   # weight <- log(1 + x$n)               # logarithmic
-  weight <- 1/x$Var
   
   x$w.random <- weight
-  meta::forest(x, weight.study = "random",
-               label.left = glue::glue("Favours {lhs_text}"),
-               label.right = glue::glue("Favours {rhs_text}"),
-               # text.add = paste("Variance:", labels_var),
-               # prediction = TRUE,
-               rightcols = colvars,
-               ...) #, xlim = c(0, 0.1))
+  meta::forest(
+    x,
+    weight.study = "random",
+    label.left = glue::glue("Favours {lhs_text}"),
+    label.right = glue::glue("Favours {rhs_text}"),
+    # text.add = paste("Variance:", labels_var),
+    # prediction = TRUE,
+    rightcols = colvars,
+    ...) #, xlim = c(0, 0.1))
 }
 
 forest_plot(res_aneurysm, filetxt = trans_method)
 # grid::grid.text("Favours Control", x = 0.3, y = 0.1)
 # grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
 
+forest_plot(res_scd_in_lvaa, filetxt = trans_method)
 forest_plot(res_stroke, filetxt = trans_method)
 forest_plot(res_lvthrombus, filetxt = trans_method)
 forest_plot(res_svt_aneu, filetxt = trans_method)
@@ -318,9 +393,19 @@ forest_plot(res_medium, filetxt = trans_method)
 forest_plot(res_large, filetxt = trans_method)
 
 # odds-ratios
-forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
-forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
-forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"), plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+
+forest_plot(res_scd_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_cva_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+forest_plot(res_thrombi_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
@@ -338,9 +423,7 @@ forest_plot(res_nscd_size, filetxt = trans_method)
 #####################
 # fit model directly
 
-modf <- lme4::glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study),
-                    family = "binomial",
-                    data = dat_raw)
+modf <- lme4::glmer(cbind(aneurysm , cohort-aneurysm) ~ 1 + (1|study), family="binomial", data = dat_raw)
 summary(modf)
 ranef(modf)
 fixef(modf)
