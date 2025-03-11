@@ -242,7 +242,7 @@ res_nscd_size <-
 
 # custom plot
 forest_plot <- function(x,
-                        save = FALSE,
+                        save = TRUE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),
                         rhs_text = "Treatment",
