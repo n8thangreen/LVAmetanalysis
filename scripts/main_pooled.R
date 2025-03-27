@@ -344,11 +344,12 @@ res_thrombi_size_or_peto$label.c <- "Small"
 #########
 
 # custom plot
-forest_plot <- function(x, save = TRUE,
+forest_plot <- function(x, save = FALSE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
-                        lhs_text = "Control", ...) {
+                        lhs_text = "Control", 
+                        exactCI = FALSE, ...) {
   
   if (save) {
     var_name <- deparse(substitute(x)) 
@@ -360,6 +361,25 @@ forest_plot <- function(x, save = TRUE,
   
   if (x$sm == "OR") {
     weight <- 1 / x$Var
+    
+    if (exactCI) {
+      # calculate exact CI
+      tab <- array(c(x$event.e, x$n.e - x$event.e,
+                     x$event.c, x$n.c - x$event.c),
+                   dim = c(x$k, 2, 2))
+      
+      for (k in 1:x$k) {
+        studytab <- t(tab[k, , ])
+        
+        if (any(studytab == 0)) {
+          studytab <- studytab + 1  # has to be integer so can't use 0.5
+        }
+        
+        exact <- exact2x2::exact2x2(studytab)
+        x$lower[k] <- log(exact$conf.int[1]) 
+        x$upper[k] <- log(exact$conf.int[2])
+      }
+    }
   } else {
     weight <- x$n / max(x$n)              # linear
   }
@@ -392,7 +412,8 @@ forest_plot(res_small, filetxt = trans_method)
 forest_plot(res_medium, filetxt = trans_method)
 forest_plot(res_large, filetxt = trans_method)
 
-# odds-ratios
+## odds-ratios
+
 forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"),
             plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"),
@@ -406,6 +427,27 @@ forest_plot(res_cva_size_or_peto, colvars = c("effect", "ci", "Var"),
             plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 forest_plot(res_thrombi_size_or_peto, colvars = c("effect", "ci", "Var"),
             plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+
+# exact study ci
+forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+
+forest_plot(res_scd_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_cva_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_thrombi_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
