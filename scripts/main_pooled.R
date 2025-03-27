@@ -349,7 +349,12 @@ forest_plot <- function(x, save = FALSE,
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
                         lhs_text = "Control", 
-                        exactCI = FALSE, ...) {
+                        exactCI = FALSE,
+                        pooledCP = FALSE, ...) {
+  
+  inv_logit <- function(x) {
+    1 / (1 + exp(-x))
+  }
   
   if (save) {
     var_name <- deparse(substitute(x)) 
@@ -381,13 +386,23 @@ forest_plot <- function(x, save = FALSE,
       }
     }
   } else {
-    weight <- x$n / max(x$n)              # linear
+    weight <- x$n / max(x$n)  # linear
+    
+    if (pooledCP) {
+      # clopper-pearson for pooled rate
+      alpha <- 0.05
+      total_successes <- sum(x$event)
+      total_trials <- sum(x$n)
+      browser()
+      x$lower.random <- qbeta(alpha / 2, total_successes, total_trials - total_successes + 1)
+      x$upper.random <- qbeta(1 - alpha / 2, total_successes + 1, total_trials - total_successes)
+    }
   }
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
   # weight <- log(1 + x$n)               # logarithmic
   
   x$w.random <- weight
-  meta::forest(
+  meta:::forest.meta(
     x,
     weight.study = "random",
     label.left = glue::glue("Favours {lhs_text}"),
@@ -399,6 +414,7 @@ forest_plot <- function(x, save = FALSE,
 }
 
 forest_plot(res_aneurysm, filetxt = trans_method)
+forest_plot(res_aneurysm, filetxt = trans_method, pooledCP = TRUE)
 # grid::grid.text("Favours Control", x = 0.3, y = 0.1)
 # grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
 
