@@ -43,7 +43,7 @@ trans_method <- "PFT"
 # remove studies with NAs
 res_aneurysm <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, method.tau = "REML",
            backtransf = TRUE,  # proportions
            common = FALSE,
            method.ci = "CP",   # exact binomial confidence intervals
@@ -344,7 +344,8 @@ res_thrombi_size_or_peto$label.c <- "Small"
 #########
 
 # custom plot
-forest_plot <- function(x, save = FALSE,
+forest_plot <- function(x,
+                        save = TRUE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
@@ -393,9 +394,22 @@ forest_plot <- function(x, save = FALSE,
       alpha <- 0.05
       total_successes <- sum(x$event)
       total_trials <- sum(x$n)
-      browser()
-      x$lower.random <- qbeta(alpha / 2, total_successes, total_trials - total_successes + 1)
-      x$upper.random <- qbeta(1 - alpha / 2, total_successes + 1, total_trials - total_successes)
+      pooled_prop <- total_successes / total_trials
+
+      # TE.random <- qbeta(0.5, total_successes, total_trials - total_successes)
+      # lower.random <- qbeta(alpha / 2, total_successes, total_trials - total_successes + 1)
+      # upper.random <- qbeta(1 - alpha / 2, total_successes + 1, total_trials - total_successes)
+      
+      # Clopper-Pearson confidence interval for pooled proportion
+      ci <- binom::binom.confint(total_successes, total_trials, method = "exact")
+
+      TE.random <- ci["mean"]
+      lower.random <- ci["lower"]
+      upper.random <- ci["upper"]
+      
+      x$TE.random <- p2asin(TE.random)
+      x$lower.random <- p2asin(lower.random)
+      x$upper.random <- p2asin(upper.random)
     }
   }
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
@@ -414,7 +428,7 @@ forest_plot <- function(x, save = FALSE,
 }
 
 forest_plot(res_aneurysm, filetxt = trans_method)
-forest_plot(res_aneurysm, filetxt = trans_method, pooledCP = TRUE)
+forest_plot(res_aneurysm, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
 # grid::grid.text("Favours Control", x = 0.3, y = 0.1)
 # grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
 
@@ -427,6 +441,16 @@ forest_plot(res_imaging, filetxt = trans_method)
 forest_plot(res_small, filetxt = trans_method)
 forest_plot(res_medium, filetxt = trans_method)
 forest_plot(res_large, filetxt = trans_method)
+
+forest_plot(res_scd_in_lvaa, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_stroke, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_lvthrombus, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_svt_aneu, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_scd, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_imaging, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_small, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_medium, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
+forest_plot(res_large, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
 
 ## odds-ratios
 
