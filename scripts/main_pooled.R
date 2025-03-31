@@ -365,6 +365,12 @@ forest_plot <- function(x,
   
   x$Var <- x$seTE^2
   
+  text.random <- ifelse(x$random, x$text.random, x$text.common)
+  overall.hetstat <- TRUE
+  
+  sd <- backtrans_delta_PFT(x$TE.random, x$tau2)^0.5
+  text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
+  
   if (x$sm == "OR") {
     weight <- 1 / x$Var
     
@@ -390,6 +396,11 @@ forest_plot <- function(x,
     weight <- x$n / max(x$n)  # linear
     
     if (pooledCP) {
+      # remove heterogeneity text
+      text.random <- ""
+      overall.hetstat <- FALSE
+      text.addline1 <- ""
+      
       # clopper-pearson for pooled rate
       alpha <- 0.05
       total_successes <- sum(x$event)
@@ -414,10 +425,9 @@ forest_plot <- function(x,
   }
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
   # weight <- log(1 + x$n)               # logarithmic
-  
-  sd <- backtrans_delta_PFT(x$TE.random, x$tau2)^0.5
     
   x$w.random <- weight
+  
   meta:::forest.meta(
     x,
     weight.study = "random",
@@ -426,7 +436,9 @@ forest_plot <- function(x,
     # text.add = paste("Variance:", labels_var),
     # prediction = TRUE,
     rightcols = colvars,
-    text.addline1 = paste0("sd = ", sd),
+    text.random = text.random,
+    overall.hetstat = overall.hetstat,
+    text.addline1 = text.addline1,
     ...) #, xlim = c(0, 0.1))
 }
 
