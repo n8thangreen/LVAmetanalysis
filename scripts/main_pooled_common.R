@@ -242,7 +242,7 @@ res_nscd_size <-
 
 # custom plot
 forest_plot <- function(x,
-                        save = TRUE,
+                        save = F,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),
                         rhs_text = "Treatment",
@@ -256,21 +256,51 @@ forest_plot <- function(x,
 
   x$Var <- x$seTE^2
   
+  sd <- backtrans_delta_PFT(x$TE.common, x$tau2)^0.5
+  text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
+  
   if (x$sm == "OR") {
     weight <- 1 / x$Var
   } else {
     weight <- x$n / max(x$n)              # linear
   }
   
-  x$w.random <- weight
+  # clopper-pearson for pooled rate
+  alpha <- 0.05
+  total_successes <- sum(x$event)
+  total_trials <- sum(x$n)
+  pooled_prop <- total_successes / total_trials
+  
+  # Clopper-Pearson confidence interval for pooled proportion
+  ci <- binom::binom.confint(total_successes, total_trials, method = "exact")
+  
+  TE.common <- ci["mean"]
+  lower.common <- ci["lower"]
+  upper.common <- ci["upper"]
+  
+  x$TE.common <- p2asin(TE.common)
+  x$lower.common <- p2asin(lower.common)
+  x$upper.common <- p2asin(upper.common)
+  
+  x$w.common <- weight
   
   meta::forest(
     x,
-    weight.study = "random",
+    weight.study = "common",
     label.left = glue::glue("Favours {lhs_text}"),
     label.right = glue::glue("Favours {rhs_text}"),
     rightcols = colvars,
+    text.addline1 = text.addline1,
     ...)
+}
+
+#
+backtrans_delta_PFT <- function(ft_value, var_ft) {
+  g <- function(x) sin(x / 2)^2        # Back-transform to proportion
+  g_prime <- function(x) sin(x) / 2    # Derivative of g(x)
+  
+  # Variance on original scale
+  (g_prime(ft_value)^2) * var_ft
 }
 
 forest_plot(res_aneurysm, filetxt = trans_method)

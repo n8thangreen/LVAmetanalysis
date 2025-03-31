@@ -453,9 +453,6 @@ backtrans_delta_PFT <- function(ft_value, var_ft) {
 
 
 forest_plot(res_aneurysm, filetxt = trans_method)
-forest_plot(res_aneurysm, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-# grid::grid.text("Favours Control", x = 0.3, y = 0.1)
-# grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
 
 forest_plot(res_scd_in_lvaa, filetxt = trans_method)
 forest_plot(res_stroke, filetxt = trans_method)
@@ -466,16 +463,6 @@ forest_plot(res_imaging, filetxt = trans_method)
 forest_plot(res_small, filetxt = trans_method)
 forest_plot(res_medium, filetxt = trans_method)
 forest_plot(res_large, filetxt = trans_method)
-
-forest_plot(res_scd_in_lvaa, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_stroke, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_lvthrombus, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_svt_aneu, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_scd, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_imaging, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_small, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_medium, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
-forest_plot(res_large, filetxt = paste0(trans_method, "_pooledCP"), pooledCP = TRUE)
 
 ## odds-ratios
 
