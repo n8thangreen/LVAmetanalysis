@@ -369,14 +369,16 @@ forest_plot <- function(x,
   text.random <- ifelse(x$random, x$text.random, x$text.common)
   overall.hetstat <- TRUE
   
+  # tau^2 between-study variance in PFT scale
   sd <- backtrans_delta_PFT(x$TE.random, x$tau2)^0.5
   text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
   
+  # odds-ratios
   if (x$sm == "OR") {
     weight <- 1 / x$Var
     
     if (exactCI) {
-      # calculate exact CI
+      # calculate exact CI for each study
       tab <- array(c(x$event.e, x$n.e - x$event.e,
                      x$event.c, x$n.c - x$event.c),
                    dim = c(x$k, 2, 2))
@@ -393,6 +395,7 @@ forest_plot <- function(x,
         x$upper[k] <- log(exact$conf.int[2])
       }
     }
+  # proportions
   } else {
     weight <- x$n / max(x$n)  # linear
     
@@ -419,6 +422,7 @@ forest_plot <- function(x,
       lower.random <- ci["lower"]
       upper.random <- ci["upper"]
       
+      # back-transform
       x$TE.random <- p2asin(TE.random)
       x$lower.random <- p2asin(lower.random)
       x$upper.random <- p2asin(upper.random)

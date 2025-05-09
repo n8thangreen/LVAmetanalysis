@@ -265,19 +265,21 @@ forest_plot <- function(x,
     weight <- x$n / max(x$n)              # linear
   }
   
-  # clopper-pearson for pooled rate
+  ## Clopper-Pearson for pooled rate
   alpha <- 0.05
   total_successes <- sum(x$event)
   total_trials <- sum(x$n)
   pooled_prop <- total_successes / total_trials
   
-  # Clopper-Pearson confidence interval for pooled proportion
+  # Clopper-Pearson confidence interval
   ci <- binom::binom.confint(total_successes, total_trials, method = "exact")
   
   TE.common <- ci["mean"]
   lower.common <- ci["lower"]
   upper.common <- ci["upper"]
   
+  # back-transform
+  # proportions to arcsine transformed proportions
   x$TE.common <- p2asin(TE.common)
   x$lower.common <- p2asin(lower.common)
   x$upper.common <- p2asin(upper.common)
