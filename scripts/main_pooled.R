@@ -43,7 +43,7 @@ trans_method <- "PFT"
 # remove studies with NAs
 res_aneurysm <-
   dat_raw[!is.na(dat_raw$aneurysm), ] |> 
-  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
+  metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, method.tau = "REML",
            backtransf = TRUE,  # proportions
            common = FALSE,
            method.ci = "CP",   # exact binomial confidence intervals
@@ -345,30 +345,91 @@ res_thrombi_size_or_peto$label.c <- "Small"
 #########
 
 # custom plot
-forest_plot <- function(x, save = FALSE,
+forest_plot <- function(x,
+                        save = FALSE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
-                        lhs_text = "Control", ...) {
+                        lhs_text = "Control", 
+                        exactCI = FALSE,
+                        pooledCP = FALSE, ...) {
+  
+  inv_logit <- function(x) {
+    1 / (1 + exp(-x))
+  }
   
   if (save) {
     var_name <- deparse(substitute(x)) 
     png(glue::glue("plots/{var_name}{filetxt}.png"), height = 500, width = 650)
     on.exit(dev.off())
   }  
-
+  
   x$Var <- x$seTE^2
+  
+  text.random <- ifelse(x$random, x$text.random, x$text.common)
+  overall.hetstat <- TRUE
+  
+  sd <- backtrans_delta_PFT(x$TE.random, x$tau2)^0.5
+  text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
   
   if (x$sm == "OR") {
     weight <- 1 / x$Var
+    
+    if (exactCI) {
+      # calculate exact CI
+      tab <- array(c(x$event.e, x$n.e - x$event.e,
+                     x$event.c, x$n.c - x$event.c),
+                   dim = c(x$k, 2, 2))
+      
+      for (k in 1:x$k) {
+        studytab <- t(tab[k, , ])
+        
+        if (any(studytab == 0)) {
+          studytab <- studytab + 1  # has to be integer so can't use 0.5
+        }
+        
+        exact <- exact2x2::exact2x2(studytab)
+        x$lower[k] <- log(exact$conf.int[1]) 
+        x$upper[k] <- log(exact$conf.int[2])
+      }
+    }
   } else {
-    weight <- x$n / max(x$n)              # linear
+    weight <- x$n / max(x$n)  # linear
+    
+    if (pooledCP) {
+      # remove heterogeneity text
+      text.random <- ""
+      overall.hetstat <- FALSE
+      text.addline1 <- ""
+      
+      # clopper-pearson for pooled rate
+      alpha <- 0.05
+      total_successes <- sum(x$event)
+      total_trials <- sum(x$n)
+      pooled_prop <- total_successes / total_trials
+      
+      # TE.random <- qbeta(0.5, total_successes, total_trials - total_successes)
+      # lower.random <- qbeta(alpha / 2, total_successes, total_trials - total_successes + 1)
+      # upper.random <- qbeta(1 - alpha / 2, total_successes + 1, total_trials - total_successes)
+      
+      # Clopper-Pearson confidence interval for pooled proportion
+      ci <- binom::binom.confint(total_successes, total_trials, method = "exact")
+      
+      TE.random <- ci["mean"]
+      lower.random <- ci["lower"]
+      upper.random <- ci["upper"]
+      
+      x$TE.random <- p2asin(TE.random)
+      x$lower.random <- p2asin(lower.random)
+      x$upper.random <- p2asin(upper.random)
+    }
   }
   # weight <- exp(1 + x$n / max(x$n))    # exponential 
   # weight <- log(1 + x$n)               # logarithmic
-  
+    
   x$w.random <- weight
-  meta::forest(
+  
+  meta:::forest.meta(
     x,
     weight.study = "random",
     label.left = glue::glue("Favours {lhs_text}"),
@@ -376,12 +437,23 @@ forest_plot <- function(x, save = FALSE,
     # text.add = paste("Variance:", labels_var),
     # prediction = TRUE,
     rightcols = colvars,
+    text.random = text.random,
+    overall.hetstat = overall.hetstat,
+    text.addline1 = text.addline1,
     ...) #, xlim = c(0, 0.1))
 }
 
+#
+backtrans_delta_PFT <- function(ft_value, var_ft) {
+  g <- function(x) sin(x / 2)^2        # Back-transform to proportion
+  g_prime <- function(x) sin(x) / 2    # Derivative of g(x)
+  
+  # Variance on original scale
+  (g_prime(ft_value)^2) * var_ft
+}
+
+
 forest_plot(res_aneurysm, filetxt = trans_method)
-# grid::grid.text("Favours Control", x = 0.3, y = 0.1)
-# grid::grid.text("Favours Treatment", x = 0.3, y = 0.1)
 
 forest_plot(res_scd_in_lvaa, filetxt = trans_method)
 forest_plot(res_stroke, filetxt = trans_method)
@@ -393,7 +465,8 @@ forest_plot(res_small, filetxt = trans_method)
 forest_plot(res_medium, filetxt = trans_method)
 forest_plot(res_large, filetxt = trans_method)
 
-# odds-ratios
+## odds-ratios
+
 forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"),
             plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"),
@@ -407,6 +480,27 @@ forest_plot(res_cva_size_or_peto, colvars = c("effect", "ci", "Var"),
             plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
 forest_plot(res_thrombi_size_or_peto, colvars = c("effect", "ci", "Var"),
             plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small")
+
+# exact study ci
+forest_plot(res_scd_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_cva_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_thrombi_size_or, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+
+forest_plot(res_scd_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_cva_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
+forest_plot(res_thrombi_size_or_peto, colvars = c("effect", "ci", "Var"),
+            plotwidth = "3cm", lhs_text = "Big", rhs_text = "Small",
+            exactCI = TRUE, filetxt = "_exactCI")
 
 # don't think that this plot is strictly correct because overall pooling is double counting
 # so should remove this
@@ -496,10 +590,10 @@ out_all %>%
     aes(label = str_glue("{b_Intercept} [{.lower}, {.upper}]"), x = 0.2),
     hjust = "inward") +
   xlab("Prevalence") #+
-  # # Observed as empty points
-  # geom_point(
-  #   data = dat %>% mutate(study = str_replace_all(study, "\\.", " ")), 
-  #   aes(x=yi), position = position_nudge(y = -.2), shape = 1)
+# # Observed as empty points
+# geom_point(
+#   data = dat %>% mutate(study = str_replace_all(study, "\\.", " ")), 
+#   aes(x=yi), position = position_nudge(y = -.2), shape = 1)
 
 ggsave(filename = "plots/forest_plot_posterior_aneurysm.png",
        width = 20, height = 20, units = "cm", dpi = 640, device = "png")
