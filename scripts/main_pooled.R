@@ -102,6 +102,7 @@ res_size <-
 resbind_size <-
   metabind(res_small, res_medium, res_large,
            outclab = "", pooled = "common", backtransf = FALSE)
+
 ##TODO: error
 # forest(resbind_size, print.I2 = FALSE, print.pval.Q = FALSE, print.subgroup.labels = FALSE)
 
@@ -344,7 +345,7 @@ res_thrombi_size_or_peto$label.c <- "Small"
 #########
 
 # custom plot
-forest_plot <- function(x, save = TRUE,
+forest_plot <- function(x, save = FALSE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
