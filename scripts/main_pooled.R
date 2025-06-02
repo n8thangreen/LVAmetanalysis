@@ -125,6 +125,7 @@ res_size <-
 resbind_size <-
   metabind(res_small, res_medium, res_large,
            outclab = "", pooled = "common", backtransf = FALSE)
+
 ##TODO: error
 # forest(resbind_size, print.I2 = FALSE, print.pval.Q = FALSE, print.subgroup.labels = FALSE)
 
@@ -391,11 +392,11 @@ forest_plot <- function(x,
   overall.hetstat <- TRUE
   
   # pooled on natural scale
+  # tau^2 between-study variance in PFT scale
   sd <- backtrans_delta_PFT(x$TE.random, x$tau2)^0.5
   text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
   
-  # calculate exact CIs?
-  
+  # odds-ratios
   if (x$sm == "OR") {
     weight <- 1 / x$Var
     
@@ -417,6 +418,7 @@ forest_plot <- function(x,
         x$upper[k] <- log(exact$conf.int[2])
       }
     }
+  # proportions
   } else {
     weight <- x$n / max(x$n)  # linear
     
@@ -443,6 +445,7 @@ forest_plot <- function(x,
       lower.random <- ci["lower"]
       upper.random <- ci["upper"]
       
+      # back-transform
       x$TE.random <- p2asin(TE.random)
       x$lower.random <- p2asin(lower.random)
       x$upper.random <- p2asin(upper.random)

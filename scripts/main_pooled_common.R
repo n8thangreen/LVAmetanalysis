@@ -270,7 +270,7 @@ forest_plot <- function(x,
     weight <- x$n / max(x$n)  # linear
   }
   
-  # clopper-pearson for overall pooled
+  ## Clopper-Pearson for pooled rate
   alpha <- 0.05
   total_successes <- sum(x$event)
   total_trials <- sum(x$n)
@@ -283,6 +283,8 @@ forest_plot <- function(x,
   lower.common <- ci["lower"]
   upper.common <- ci["upper"]
   
+  # back-transform
+  # proportions to arcsine transformed proportions
   x$TE.common <- p2asin(TE.common)
   x$lower.common <- p2asin(lower.common)
   x$upper.common <- p2asin(upper.common)
