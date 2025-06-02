@@ -1,12 +1,16 @@
 
-# frequentist and Bayesian meta-analysis
-# of aneurysm (LVA) data
+# frequentist of aneurysm (LVA) data
 # for outcomes:
 #  stroke, LV thrombus, SCD, imaging, size
 #
-# using Freeman-Tukey double arcsine transformation
+# using Freeman-Tukey (PFT) double arcsine transformation
+# instead of logit transformation
 #
 # COMMOM EFFECT models for supplementary material
+#
+# confidence intervals for individual study results
+# Clopper-Pearson interval ('exact' binomial interval)
+# method.ci = "CP"
 
 library(meta)
 library(dplyr)
@@ -242,7 +246,7 @@ res_nscd_size <-
 
 # custom plot
 forest_plot <- function(x,
-                        save = F,
+                        save = TRUE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),
                         rhs_text = "Treatment",
@@ -256,22 +260,23 @@ forest_plot <- function(x,
 
   x$Var <- x$seTE^2
   
+  # pooled on natural scale
   sd <- backtrans_delta_PFT(x$TE.common, x$tau2)^0.5
   text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
   
   if (x$sm == "OR") {
     weight <- 1 / x$Var
   } else {
-    weight <- x$n / max(x$n)              # linear
+    weight <- x$n / max(x$n)  # linear
   }
   
-  # clopper-pearson for pooled rate
+  # clopper-pearson for overall pooled
   alpha <- 0.05
   total_successes <- sum(x$event)
   total_trials <- sum(x$n)
   pooled_prop <- total_successes / total_trials
   
-  # Clopper-Pearson confidence interval for pooled proportion
+  # Clopper-Pearson confidence interval for pooled rate/proportion
   ci <- binom::binom.confint(total_successes, total_trials, method = "exact")
   
   TE.common <- ci["mean"]
@@ -294,7 +299,7 @@ forest_plot <- function(x,
     ...)
 }
 
-#
+# transform from linear scale to rate
 backtrans_delta_PFT <- function(ft_value, var_ft) {
   g <- function(x) sin(x / 2)^2        # Back-transform to proportion
   g_prime <- function(x) sin(x) / 2    # Derivative of g(x)

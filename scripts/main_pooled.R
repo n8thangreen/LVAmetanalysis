@@ -5,11 +5,19 @@
 #  stroke, LV thrombus, SCD, imaging, size
 #
 # using Freeman-Tukey double arcsine transformation
+# instead of logit transformation
+#
+# RANDOM EFFECT models for supplementary material
+#
+# confidence intervals for individual study results
+# Clopper-Pearson interval ('exact' binomial interval)
+# method.ci = "CP"
 
 library(meta)
 library(dplyr)
 library(lme4)
 library(tidyr)
+library(stringr)
 
 filename <- "LVA and outcomes_size 2024 01 28.dta"
 # filename <- "LVA and outcomes_2023 11 30.dta"
@@ -30,6 +38,21 @@ dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
 #       n_small, n_medium, n_large, nscd_small, nscd_medium, nscd_large, ncva_small, ncva_big, nthrombus_small, nthrombus_big),
 #     ~ replace_na(.x, 0)))
 
+# reformat study names for paper
+desired_ids <- c(17, 9, 18, 8, 16, 20, 15, 14, 7, 19) 
+
+dat_raw <- dat_raw %>%
+  mutate(
+    # Extract author name (everything before the last space)
+    author = str_extract(study, "^.*(?=\\s\\d{4})"),
+    # Extract year (the four digits at the end)
+    year = str_extract(study, "\\d{4}$"),
+    # Add the predefined IDs
+    id = desired_ids, # Use this if you have predefined IDs
+    # Format the new reference string
+    study = paste0(author, " (", year, ") [", id, "]")
+  ) |> 
+  select(-author)
 
 ##############
 # frequentist
@@ -46,7 +69,7 @@ res_aneurysm <-
   metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, method.tau = "REML",
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_scd <-
@@ -54,7 +77,7 @@ res_scd <-
   metaprop(event = nscd, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_imaging <-
@@ -62,7 +85,7 @@ res_imaging <-
   metaprop(event = aneurysm, n = cohort, studlab = study, sm = trans_method, subgroup = imaging, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_small <-
@@ -70,7 +93,7 @@ res_small <-
   metaprop(event = n_small, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_medium <-
@@ -78,7 +101,7 @@ res_medium <-
   metaprop(event = n_medium, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_large <-
@@ -86,7 +109,7 @@ res_large <-
   metaprop(event = n_large, n = cohort, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_size <-
@@ -96,7 +119,7 @@ res_size <-
   metaprop(event = value, n = cohort, studlab = study, sm = trans_method, subgroup = size, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 resbind_size <-
@@ -112,7 +135,7 @@ res_stroke <-
   metaprop(event = ncva, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_lvthrombus <-
@@ -120,7 +143,7 @@ res_lvthrombus <-
   metaprop(event = nlvthrombus, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_svt_aneu <-
@@ -128,7 +151,7 @@ res_svt_aneu <-
   metaprop(event = nsvt_aneu_n, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_scd_in_lvaa <-
@@ -136,7 +159,7 @@ res_scd_in_lvaa <-
   metaprop(event = nscd, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)           
 
 res_scd_per_aneurysm <-
@@ -144,7 +167,7 @@ res_scd_per_aneurysm <-
   metaprop(event = nscd, n = aneurysm, studlab = study, sm = trans_method, subgroup = atpy_n, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_small_per_aneurysm <-
@@ -152,7 +175,7 @@ res_small_per_aneurysm <-
   metaprop(event = n_small, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_medium_per_aneurysm <-
@@ -160,7 +183,7 @@ res_medium_per_aneurysm <-
   metaprop(event = n_medium, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 res_large_per_aneurysm <-
@@ -168,7 +191,7 @@ res_large_per_aneurysm <-
   metaprop(event = n_large, n = aneurysm, studlab = study, sm = trans_method, method.tau = "REML", 
            backtransf = TRUE,  # proportions
            common = FALSE,
-           method.ci = "CP",   # exact binomial confidence intervals
+           method.ci = "CP",   # exact binomial confidence intervals study-specific
            data = _)
 
 # The same comment applies for sudden death; can the forest plot show n_scd/aneurysm 
@@ -350,8 +373,7 @@ forest_plot <- function(x,
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
                         lhs_text = "Control", 
-                        exactCI = FALSE,
-                        pooledCP = FALSE, ...) {
+                        exactCI = FALSE, ...) {
   
   inv_logit <- function(x) {
     1 / (1 + exp(-x))
@@ -368,14 +390,17 @@ forest_plot <- function(x,
   text.random <- ifelse(x$random, x$text.random, x$text.common)
   overall.hetstat <- TRUE
   
+  # pooled on natural scale
   sd <- backtrans_delta_PFT(x$TE.random, x$tau2)^0.5
   text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
+  
+  # calculate exact CIs?
   
   if (x$sm == "OR") {
     weight <- 1 / x$Var
     
+    # study specific CI
     if (exactCI) {
-      # calculate exact CI
       tab <- array(c(x$event.e, x$n.e - x$event.e,
                      x$event.c, x$n.c - x$event.c),
                    dim = c(x$k, 2, 2))
@@ -395,13 +420,13 @@ forest_plot <- function(x,
   } else {
     weight <- x$n / max(x$n)  # linear
     
-    if (pooledCP) {
+    # clopper-pearson overall pooled
+    if (exactCI) {
       # remove heterogeneity text
       text.random <- ""
       overall.hetstat <- FALSE
       text.addline1 <- ""
       
-      # clopper-pearson for pooled rate
       alpha <- 0.05
       total_successes <- sum(x$event)
       total_trials <- sum(x$n)
@@ -442,7 +467,7 @@ forest_plot <- function(x,
     ...) #, xlim = c(0, 0.1))
 }
 
-#
+# transform from linear scale to rate
 backtrans_delta_PFT <- function(ft_value, var_ft) {
   g <- function(x) sin(x / 2)^2        # Back-transform to proportion
   g_prime <- function(x) sin(x) / 2    # Derivative of g(x)
