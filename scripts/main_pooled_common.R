@@ -1,4 +1,3 @@
-
 # frequentist of aneurysm (LVA) data
 # for outcomes:
 #  stroke, LV thrombus, SCD, imaging, size
@@ -16,6 +15,7 @@ library(meta)
 library(dplyr)
 library(lme4)
 library(tidyr)
+library(stringr)
 
 filename <- "LVA and outcomes_size 2024 01 28.dta"
 
@@ -25,6 +25,22 @@ dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
 
 # remove duplicate rows
 dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
+
+# reformat study names for paper
+desired_ids <- c(17, 9, 18, 8, 16, 20, 15, 14, 7, 19) 
+
+dat_raw <- dat_raw %>%
+  mutate(
+    # Extract author name (everything before the last space)
+    author = str_extract(study, "^.*(?=\\s\\d{4})"),
+    # Extract year (the four digits at the end)
+    year = str_extract(study, "\\d{4}$"),
+    # Add the predefined IDs
+    id = desired_ids, # Use this if you have predefined IDs
+    # Format the new reference string
+    study = paste0(author, " (", year, ") [", id, "]")
+  ) |> 
+  select(-author)
 
 ##############
 # frequentist

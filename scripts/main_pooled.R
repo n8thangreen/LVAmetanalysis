@@ -369,7 +369,7 @@ res_thrombi_size_or_peto$label.c <- "Small"
 
 # custom plot
 forest_plot <- function(x,
-                        save = FALSE,
+                        save = TRUE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
