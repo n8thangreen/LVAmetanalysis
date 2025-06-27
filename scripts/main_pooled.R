@@ -346,7 +346,7 @@ res_thrombi_size_or_peto$label.c <- "Small"
 
 # custom plot
 forest_plot <- function(x,
-                        save = FALSE,
+                        save = TRUE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),  #, "Var"),
                         rhs_text = "Treatment",
@@ -360,7 +360,8 @@ forest_plot <- function(x,
   
   if (save) {
     var_name <- deparse(substitute(x)) 
-    png(glue::glue("plots/{var_name}{filetxt}.png"), height = 500, width = 650)
+    # png(glue::glue("plots/{var_name}{filetxt}.png"), height = 500, width = 650)     # standard resolution
+    png(glue::glue("plots/{var_name}{filetxt}.png"), height = 1400, width = 2500, res = 300)   # high resolution
     on.exit(dev.off())
   }  
   

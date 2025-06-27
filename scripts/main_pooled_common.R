@@ -242,7 +242,7 @@ res_nscd_size <-
 
 # custom plot
 forest_plot <- function(x,
-                        save = F,
+                        save = TRUE,
                         filetxt = "",
                         colvars = c("effect", "ci", "w.random"),
                         rhs_text = "Treatment",
@@ -250,7 +250,8 @@ forest_plot <- function(x,
   
   if (save) {
     var_name <- deparse(substitute(x)) 
-    png(glue::glue("plots/{var_name}{filetxt}_common.png"), height = 500, width = 650)
+    # png(glue::glue("plots/{var_name}{filetxt}_common.png"), height = 500, width = 650)     # standard resolution
+    png(glue::glue("plots/{var_name}{filetxt}_common.png"), height = 1400, width = 2500, res = 300)   # high resolution
     on.exit(dev.off())
   }  
 
