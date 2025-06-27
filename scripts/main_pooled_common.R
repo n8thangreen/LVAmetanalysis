@@ -1,17 +1,21 @@
-
-# frequentist and Bayesian meta-analysis
-# of aneurysm (LVA) data
+# frequentist of aneurysm (LVA) data
 # for outcomes:
 #  stroke, LV thrombus, SCD, imaging, size
 #
-# using Freeman-Tukey double arcsine transformation
+# using Freeman-Tukey (PFT) double arcsine transformation
+# instead of logit transformation
 #
 # COMMOM EFFECT models for supplementary material
+#
+# confidence intervals for individual study results
+# Clopper-Pearson interval ('exact' binomial interval)
+# method.ci = "CP"
 
 library(meta)
 library(dplyr)
 library(lme4)
 library(tidyr)
+library(stringr)
 
 filename <- "LVA and outcomes_size 2024 01 28.dta"
 
@@ -21,6 +25,22 @@ dat_raw$nsvt_aneu_n <- as.numeric(dat_raw$nsvt_aneu_n)
 
 # remove duplicate rows
 dat_raw <- dat_raw[!duplicated(dat_raw$study), ]
+
+# reformat study names for paper
+desired_ids <- c(17, 9, 18, 8, 16, 20, 15, 14, 7, 19) 
+
+dat_raw <- dat_raw %>%
+  mutate(
+    # Extract author name (everything before the last space)
+    author = str_extract(study, "^.*(?=\\s\\d{4})"),
+    # Extract year (the four digits at the end)
+    year = str_extract(study, "\\d{4}$"),
+    # Add the predefined IDs
+    id = desired_ids, # Use this if you have predefined IDs
+    # Format the new reference string
+    study = paste0(author, " (", year, ") [", id, "]")
+  ) |> 
+  select(-author)
 
 ##############
 # frequentist
@@ -257,13 +277,14 @@ forest_plot <- function(x,
 
   x$Var <- x$seTE^2
   
+  # pooled on natural scale
   sd <- backtrans_delta_PFT(x$TE.common, x$tau2)^0.5
   text.addline1 <- paste0("\u03C3 = ", sprintf("%.4f", sd))
   
   if (x$sm == "OR") {
     weight <- 1 / x$Var
   } else {
-    weight <- x$n / max(x$n)              # linear
+    weight <- x$n / max(x$n)  # linear
   }
   
   ## Clopper-Pearson for pooled rate
@@ -272,7 +293,7 @@ forest_plot <- function(x,
   total_trials <- sum(x$n)
   pooled_prop <- total_successes / total_trials
   
-  # Clopper-Pearson confidence interval
+  # Clopper-Pearson confidence interval for pooled rate/proportion
   ci <- binom::binom.confint(total_successes, total_trials, method = "exact")
   
   TE.common <- ci["mean"]
@@ -297,7 +318,7 @@ forest_plot <- function(x,
     ...)
 }
 
-#
+# transform from linear scale to rate
 backtrans_delta_PFT <- function(ft_value, var_ft) {
   g <- function(x) sin(x / 2)^2        # Back-transform to proportion
   g_prime <- function(x) sin(x) / 2    # Derivative of g(x)
